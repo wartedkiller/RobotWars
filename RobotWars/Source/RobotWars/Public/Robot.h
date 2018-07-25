@@ -6,6 +6,11 @@
 #include "GameFramework/Pawn.h"
 #include "Robot.generated.h"
 
+#define MAX_THREAD_SPEED 100.0f
+#define MIN_THREAH_SPEED -100.0f
+#define MAX_SPEED 11.0f
+#define TREAD_DISTANCE 15.5f
+
 UCLASS()
 class ROBOTWARS_API ARobot : public APawn
 {
@@ -26,6 +31,10 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	void SetRobotName(FString RobotNewName);
+	void SetThreadSpeed(float LeftThread, float RightThread);
+
+private:
+	void MoveRobot(float DeltaTime);
 
 ///********** VARIABLE **********
 
@@ -34,9 +43,10 @@ public:
 	FVector2D RobotPosition;
 	float RobotHeading;
 
+	///TEST VALUE
+	FRotator myRot;
+
 protected:
-	int LeftThreadSpeed;
-	int RightThreadSpeed;
 
 	// Debug tool - Show which way the Robot is facing
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
@@ -47,6 +57,8 @@ protected:
 		class UPaperSpriteComponent* RobotSprite;
 
 private:
+	int LeftThreadSpeed = 0;
+	int RightThreadSpeed = 0;
 
 	//The in Development Camera - Should be remove and put in an observer in final version
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
