@@ -53,7 +53,7 @@ void ARobot::BeginPlay()
 	RobotDirection->SetWorldRotation(FRotator(0.0f, 45.0f, 0.0f));
 
 	LeftThreadSpeed = 100;
-	RightThreadSpeed = 100;
+	RightThreadSpeed = 10;
 
 	UE_LOG(LogTemp, Warning, TEXT("LeftThreadSpeed = %i   RightThreadSpeed = %i"), LeftThreadSpeed, RightThreadSpeed)
 }
@@ -93,6 +93,7 @@ void ARobot::SetThreadSpeed(float LeftThread, float RightThread)
 //TODO Something with turning logic is wrong which make the radius at which the robot turn weird.
 //Like if the radius is always the same no mater the TreadSpeed.
 //But they are turning the right way.
+//Revisit the turning angle calculation.
 void ARobot::MoveRobot(float DeltaTime)
 {
 
@@ -182,11 +183,12 @@ void ARobot::MoveRobot(float DeltaTime)
 		float DeltaYaw = URobotWarsStatics::FindDeltaAngleDegrees(CurrentAngle.Yaw, MovementAngle.Yaw);
 		if (DeltaYaw != 0.0f)
 		{
-			float AdjustedDeltaYaw = DeltaYaw;
+			float AdjustedDeltaYaw = DeltaYaw * DeltaTime;
 
 			// Adjust toward our desired angle, and stop if we've reached it.
 			float MaxYawThisFrame = 180.0f * DeltaTime;
-			if (MaxYawThisFrame >= FMath::Abs(AdjustedDeltaYaw))
+			UE_LOG(LogTemp, Warning, TEXT("MaxYawThisTurn = %f    AdjustedYaw = %f    MovementAngle = %f"), MaxYawThisFrame, AdjustedDeltaYaw, MovementAngle.Yaw)
+			if (MaxYawThisFrame > FMath::Abs(AdjustedDeltaYaw))
 			{
 				RobotDirection->SetWorldRotation(MovementAngle);
 			}
@@ -195,6 +197,8 @@ void ARobot::MoveRobot(float DeltaTime)
 				// Adjust as far as we can this frame, because we know we can't reach the goal yet.
 				RobotDirection->AddLocalRotation(FRotator(0.0f, FMath::Sign(AdjustedDeltaYaw) * MaxYawThisFrame, 0.0f));
 			}
+
+			//UE_LOG(LogTemp, Warning, TEXT("MovementAngle = %f    RobotLocation = %f"), MovementAngle.Yaw, RobotDirection->GetComponentRotation().Yaw)
 		}
 
 		// Move the tank
