@@ -56,6 +56,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 		class UPaperSpriteComponent* RobotSprite;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
+		class AMissileSystem* Missile;
+
 private:
 	int LeftThreadSpeed = 0;
 	int RightThreadSpeed = 0;

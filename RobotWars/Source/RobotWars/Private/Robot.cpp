@@ -5,6 +5,7 @@
 #include "Components/ArrowComponent.h"
 #include "Camera/CameraComponent.h"
 #include "RobotWarsStatics.h"
+#include "MissileSystem.h"
 #include "GameFramework/SpringArmComponent.h"
 
 // Sets default values
@@ -43,6 +44,7 @@ ARobot::ARobot()
 	CameraComponent->AttachToComponent(SpringArm, FAttachmentTransformRules::KeepWorldTransform, SpringArm->SocketName);
 	CameraComponent->SetWorldRotation(FRotator(-90.0f, 0.0f, 0.0f));
 	
+	Missile = CreateDefaultSubobject<AMissileSystem>(TEXT("RobotMissile"));
 }
 
 // Called when the game starts or when spawned
@@ -56,6 +58,7 @@ void ARobot::BeginPlay()
 	RightThreadSpeed = 10;
 
 	UE_LOG(LogTemp, Warning, TEXT("LeftThreadSpeed = %i   RightThreadSpeed = %i"), LeftThreadSpeed, RightThreadSpeed)
+	Missile->FireWeapon(GetActorLocation(), RobotDirection->GetComponentRotation().Yaw);
 }
 
 void ARobot::SetRobotName(FString RobotNewName)
@@ -125,8 +128,6 @@ void ARobot::MoveRobot(float DeltaTime)
 		//heading of the Robot and calculate it's futur position.
 		CurrentHeading = FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw);
 		DesiredMovementDirection = FVector(lTreadDist * FMath::Cos(CurrentHeading), rTreadDist * FMath::Sin(CurrentHeading), 0.0f);
-		
-
 	}
 	else
 	{
@@ -217,7 +218,7 @@ void ARobot::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	MoveRobot(DeltaTime);
+	//MoveRobot(DeltaTime);
 }
 
 // Called to bind functionality to input
