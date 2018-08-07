@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "Missile.generated.h"
 
+#define MISSILE_SPEED 150.0f
+
 UCLASS()
 class ROBOTWARS_API AMissile : public AActor
 {
@@ -32,6 +34,9 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+private:
+	void OnHit();
 
 
 /********VARIABLES********/

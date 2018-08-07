@@ -5,8 +5,8 @@
 #include "Components/ArrowComponent.h"
 #include "Camera/CameraComponent.h"
 #include "RobotWarsStatics.h"
-#include "MissileSystem.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Engine/World.h"
 
 // Sets default values
 ARobot::ARobot()
@@ -44,7 +44,7 @@ ARobot::ARobot()
 	CameraComponent->AttachToComponent(SpringArm, FAttachmentTransformRules::KeepWorldTransform, SpringArm->SocketName);
 	CameraComponent->SetWorldRotation(FRotator(-90.0f, 0.0f, 0.0f));
 	
-	Missile = CreateDefaultSubobject<AMissileSystem>(TEXT("RobotMissile"));
+	//MissileToSpawn = CreateDefaultSubobject<AMissile>(TEXT("RobotMissile"));
 }
 
 // Called when the game starts or when spawned
@@ -55,10 +55,11 @@ void ARobot::BeginPlay()
 	RobotDirection->SetWorldRotation(FRotator(0.0f, 45.0f, 0.0f));
 
 	LeftThreadSpeed = 100;
-	RightThreadSpeed = 10;
+	RightThreadSpeed = 100;
 
 	UE_LOG(LogTemp, Warning, TEXT("LeftThreadSpeed = %i   RightThreadSpeed = %i"), LeftThreadSpeed, RightThreadSpeed)
-	Missile->FireWeapon(GetActorLocation(), RobotDirection->GetComponentRotation().Yaw);
+		
+	FireMissile();
 }
 
 void ARobot::SetRobotName(FString RobotNewName)
@@ -90,6 +91,31 @@ void ARobot::SetThreadSpeed(float LeftThread, float RightThread)
 
 	LeftThreadSpeed = LeftThread;
 	RightThreadSpeed = RightThread;
+}
+
+bool ARobot::FireMissile()
+{
+	if (MissileToSpawn)
+	{
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.Owner = this;
+
+			//UE_LOG(LogTemp, Warning, TEXT("RobotName : %s"), *this.GetName())
+			UE_LOG(LogTemp, Warning, TEXT("Set Missile Owner : %s"), *SpawnParams.Owner->GetName())
+
+			FRotator CurrentRotation = RobotDirection->GetComponentRotation();
+
+			FVector CurrentPosition = GetActorLocation();
+
+			World->SpawnActor<AMissile>(MissileToSpawn, CurrentPosition, CurrentRotation, SpawnParams);
+			
+			return true;
+		}
+	}
+	return false;
 }
 
 
@@ -174,7 +200,7 @@ void ARobot::MoveRobot(float DeltaTime)
 
 	
 	//This is taken straight from Unreals "Tank VS Zombies" Tutorials.
-	//Might need to check if things are really necessary in our case but for now it works.
+	//Might need to check if things are really necessary in our case but for now it "works".
 	//TODO Modify comments to match this game
 	if (!DesiredMovementDirection.IsNearlyZero())
 	{

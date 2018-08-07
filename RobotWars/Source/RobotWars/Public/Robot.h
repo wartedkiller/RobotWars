@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "Missile.h"
 #include "Robot.generated.h"
 
 #define MAX_THREAD_SPEED 100.0f
@@ -32,6 +33,8 @@ protected:
 	virtual void BeginPlay() override;
 	void SetRobotName(FString RobotNewName);
 	void SetThreadSpeed(float LeftThread, float RightThread);
+	
+	bool FireMissile();
 
 private:
 	void MoveRobot(float DeltaTime);
@@ -43,8 +46,9 @@ public:
 	FVector2D RobotPosition;
 	float RobotHeading;
 
-	///TEST VALUE
-	FRotator myRot;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Robot", meta = (AllowPrivateAccess = "true"))
+	//UPROPERTY(EditAnywhere)
+		TSubclassOf<AMissile> MissileToSpawn;
 
 protected:
 
@@ -55,9 +59,6 @@ protected:
 	//Sprite for the Robot.
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 		class UPaperSpriteComponent* RobotSprite;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
-		class AMissileSystem* Missile;
 
 private:
 	int LeftThreadSpeed = 0;
