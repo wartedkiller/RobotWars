@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "PaperCharacter.h"
 #include "GameFramework/Actor.h"
 #include "Missile.generated.h"
 
@@ -24,11 +25,11 @@ protected:
 	virtual void BeginPlay() override;
 
 	// Debug tool - Show which way the Robot is facing
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Missile", meta = (AllowPrivateAccess = "true"))
 		class UArrowComponent* MissileDirection;
 
 	//Sprite for the Robot.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Missile", meta = (AllowPrivateAccess = "true"))
 		class UPaperSpriteComponent* MissileSprite;
 
 public:	
@@ -36,9 +37,16 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 private:
-	void OnHit();
+	void Explode();
 
 
 /********VARIABLES********/
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Projectile")
+		FName MovementCollisionProfile;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Projectile")
+		float Radius;
 	
 };

@@ -4,6 +4,7 @@
 #include "PaperSpriteComponent.h"
 #include "RobotWarsStatics.h"
 #include "Components/ArrowComponent.h"
+#include "Engine/World.h"
 
 
 // Sets default values
@@ -11,6 +12,8 @@ AMissile::AMissile()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	Radius = 6.5f;
 
 	if (!RootComponent)
 	{
@@ -43,26 +46,48 @@ void AMissile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	//Set the direction the missile will be facing.
-	float CurrentHeading = FMath::DegreesToRadians(MissileDirection->GetComponentRotation().Yaw);
-	FVector DesiredMovementDirection = FVector(MISSILE_SPEED * FMath::Cos(CurrentHeading), MISSILE_SPEED * FMath::Sin(CurrentHeading), 0.0f);
+	//Get current location of the missile
+	FVector CurrentLocation = GetActorLocation();
+	//Add the distance flown by the missile during DeltaTime
+	FVector DesiredEndLocation = CurrentLocation + ((DeltaTime * MISSILE_SPEED) * GetTransform().GetUnitAxis(EAxis::X));
 	
-	//Set the rotation of the missile.
-	MissileDirection->SetWorldRotation(DesiredMovementDirection.Rotation());
+	//Check for collision
+	if (UWorld* World = GetWorld())
+	{
+		FHitResult OutHit;
+		FCollisionShape CollisionShape;
+		CollisionShape.SetCapsule(Radius, 200.0f);
 
-	//Get a unit vector facing where the missile is facing.
-	FVector MovementDirection = MissileDirection->GetForwardVector();
-	//Get the current location of the missile.
-	FVector Pos = GetActorLocation();
-	//Add the travel distance of the missile during DeltaTime to it's current location.
-	//We don't move the Z position since it's a 2D game and Z is the hight.
-	Pos.X += MovementDirection.X * MISSILE_SPEED * DeltaTime;
-	Pos.Y += MovementDirection.Y * MISSILE_SPEED * DeltaTime;
-	//Set the missile new position.
-	SetActorLocation(Pos);
+		//If the missile collide, handle the collision based on what it hit
+		//Else move the missile forward
+		if (World->SweepSingleByProfile(OutHit, CurrentLocation, DesiredEndLocation, FQuat::Identity, MovementCollisionProfile, CollisionShape))
+		{
+			if (OutHit.GetActor()->GetName().Compare(this->GetOwner()->GetName()) == 0)
+			{
+				SetActorLocation(DesiredEndLocation);
+				UE_LOG(LogTemp, Warning, TEXT("Missile collided with its owner"))
+			}
+			else
+			{
+				SetActorLocation(OutHit.Location);
+				UE_LOG(LogTemp, Warning, TEXT("Missile collided with : %s"), *OutHit.GetActor()->GetName())
+				Explode();
+			}
+			
+		}
+		else
+		{
+			//Set Missile new location
+			SetActorLocation(DesiredEndLocation);
+			
+		}
+	}
 }
 
-void AMissile::OnHit()
+void AMissile::Explode()
 {
+	UE_LOG(LogTemp, Warning, TEXT("Insert Missile Explosion Here"))
+	
+	Destroy();
 }
 

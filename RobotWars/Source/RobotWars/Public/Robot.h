@@ -60,9 +60,21 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 		class UPaperSpriteComponent* RobotSprite;
 
+
 private:
 	int LeftThreadSpeed = 0;
 	int RightThreadSpeed = 0;
+
+	/* TEST VARIALBE*/
+	float drawLine = 0.0f;
+
+	//The Robot collision capsule
+	UPROPERTY(VisibleAnywhere, Category = "Robot")
+		class UCapsuleComponent* RobotCollisionCapsule;
+
+	//The robots shield collision capsule. Slightly bigger so when the shield is gone, missile can miss the shield.
+	UPROPERTY(VisibleAnywhere, Category = "Robot")
+		class UCapsuleComponent* ShieldCollisionCapsule;
 
 	//The in Development Camera - Should be remove and put in an observer in final version
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))

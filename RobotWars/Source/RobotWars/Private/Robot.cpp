@@ -7,6 +7,8 @@
 #include "RobotWarsStatics.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Engine/World.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/LineBatchComponent.h"
 
 // Sets default values
 ARobot::ARobot()
@@ -24,6 +26,11 @@ ARobot::ARobot()
 	
 	RobotSprite = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("RobotSprite"));
 	RobotSprite->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
+
+	RobotCollisionCapsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RobotCollisionCapsule"));
+	RobotCollisionCapsule->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
+	RobotCollisionCapsule->InitCapsuleSize(20.0f, 200.0f);
+
 
 	///If something is changed to the SpringArm or the CameraComponent, you must restart UE4
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
@@ -51,8 +58,6 @@ ARobot::ARobot()
 void ARobot::BeginPlay()
 {
 	Super::BeginPlay();
-
-	RobotDirection->SetWorldRotation(FRotator(0.0f, 45.0f, 0.0f));
 
 	LeftThreadSpeed = 100;
 	RightThreadSpeed = 100;
@@ -102,16 +107,13 @@ bool ARobot::FireMissile()
 		{
 			FActorSpawnParameters SpawnParams;
 			SpawnParams.Owner = this;
-
-			//UE_LOG(LogTemp, Warning, TEXT("RobotName : %s"), *this.GetName())
-			UE_LOG(LogTemp, Warning, TEXT("Set Missile Owner : %s"), *SpawnParams.Owner->GetName())
-
+			
 			FRotator CurrentRotation = RobotDirection->GetComponentRotation();
 
 			FVector CurrentPosition = GetActorLocation();
 
 			World->SpawnActor<AMissile>(MissileToSpawn, CurrentPosition, CurrentRotation, SpawnParams);
-			
+			UE_LOG(LogTemp, Warning, TEXT("Missile Fire"))
 			return true;
 		}
 	}
@@ -175,15 +177,15 @@ void ARobot::MoveRobot(float DeltaTime)
 			{
 				InnerRadians = rTreadDist * TREAD_DISTANCE / (lTreadDist - rTreadDist);
 				DistanceTreadMiddle = InnerRadians + TREAD_DISTANCE / 2;
-				RotationAngle = -rTreadDist * 360.0 / (2 * PI * InnerRadians);
-				StartAngle = RobotDirection->GetComponentRotation().Yaw + 270;
+				RotationAngle = -rTreadDist * 360.0f / (2 * PI * InnerRadians);
+				StartAngle = RobotDirection->GetComponentRotation().Yaw + 270.0f;
 			}
 			else
 			{
 				InnerRadians = lTreadDist * TREAD_DISTANCE / (rTreadDist - lTreadDist);
 				DistanceTreadMiddle = InnerRadians + TREAD_DISTANCE / 2;
-				RotationAngle = -lTreadDist * 360.0 / (2 * PI * InnerRadians);
-				StartAngle = RobotDirection->GetComponentRotation().Yaw + 90;
+				RotationAngle = -lTreadDist * 360.0f / (2 * PI * InnerRadians);
+				StartAngle = RobotDirection->GetComponentRotation().Yaw + 90.0f;
 
 			}
 		}
@@ -245,6 +247,14 @@ void ARobot::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	//MoveRobot(DeltaTime);
+
+	FVector PosStart = GetActorLocation();
+
+	drawLine += DeltaTime * 2;
+
+	FVector PosEnd = PosStart + FVector(45.0f, 45.0f - drawLine, 0.0f);
+
+	//GetWorld()->LineBatcher->DrawLine(PosStart, PosEnd, FLinearColor::Blue, 1, 1.0f);
 }
 
 // Called to bind functionality to input
