@@ -9,6 +9,10 @@
 #include "Engine/World.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/LineBatchComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "UObject/ConstructorHelpers.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Engine/StaticMesh.h"
 
 // Sets default values
 ARobot::ARobot()
@@ -29,8 +33,51 @@ ARobot::ARobot()
 
 	RobotCollisionCapsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RobotCollisionCapsule"));
 	RobotCollisionCapsule->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
-	RobotCollisionCapsule->InitCapsuleSize(20.0f, 200.0f);
+	RobotCollisionCapsule->InitCapsuleSize(23.0f, 200.0f); 
 
+	RobotShield = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RobotShield"));
+	RobotShield->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> ShieldVisualAsset(TEXT("/Engine/BasicShapes/Plane"));
+	if (ShieldVisualAsset.Succeeded())
+	{
+		RobotShield->SetStaticMesh(ShieldVisualAsset.Object);
+		
+		///This doesn't work. Need investigation or Reddit help.
+		/*static ConstructorHelpers::FObjectFinder<UMaterial> ShieldMaterial(TEXT("Material'/Game/Material/ShieldMaterial.ShieldMaterial'"));
+		if (ShieldMaterial.Succeeded())
+		{
+			RobotShield->SetMaterial(0, UMaterialInstanceDynamic::Create(ShieldMaterial.Object, RobotShield));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Missile Blueprint could not be found so NO MISSILE WILL SPAWN"))
+		}*/
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Missile Blueprint could not be found so NO MISSILE WILL SPAWN"))
+	}
+
+	static ConstructorHelpers::FObjectFinder<UMaterial> ShieldMaterialGetter(TEXT("Material'/Game/Material/ShieldMaterial.ShieldMaterial'"));
+	if (ShieldMaterialGetter.Succeeded())
+	{
+
+		ShieldMaterialHelper = ShieldMaterialGetter.Object;
+	}
+	else
+	{
+	UE_LOG(LogTemp, Warning, TEXT("Missile Blueprint could not be found so NO MISSILE WILL SPAWN"))
+	}
+
+	static ConstructorHelpers::FObjectFinder<UBlueprint> MissileBP(TEXT("Blueprint'/Game/Blueprint/Missile_BP.Missile_BP'"));
+	if (MissileBP.Succeeded())
+	{
+		MissileToSpawn = MissileBP.Object->GeneratedClass;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Missile Blueprint could not be found so NO MISSILE WILL SPAWN"))
+	}
 
 	///If something is changed to the SpringArm or the CameraComponent, you must restart UE4
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
@@ -58,6 +105,15 @@ ARobot::ARobot()
 void ARobot::BeginPlay()
 {
 	Super::BeginPlay();
+
+
+	if (ShieldMaterialHelper)
+	{
+		ShieldMaterial = RobotShield->CreateDynamicMaterialInstance(0, ShieldMaterialHelper);
+		RobotShield->SetMaterial(0, ShieldMaterial);
+	}
+
+
 
 	LeftThreadSpeed = 100;
 	RightThreadSpeed = 100;
@@ -262,5 +318,19 @@ void ARobot::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+}
+
+void ARobot::GetHit()
+{
+	if (RobotShield)
+	{
+		if (ShieldMaterial)
+		{
+			FLinearColor CurrentColor = FLinearColor(ShieldMaterial->K2_GetVectorParameterValue("ShieldColor"));
+			ShieldMaterial->SetVectorParameterValue("ShieldColor", FLinearColor(CurrentColor.R, CurrentColor.G, CurrentColor.B, 0.5f));
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("%s got hit"), *GetName())
 }
 

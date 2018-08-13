@@ -5,6 +5,7 @@
 #include "RobotWarsStatics.h"
 #include "Components/ArrowComponent.h"
 #include "Engine/World.h"
+#include "Robot.h"
 
 
 // Sets default values
@@ -71,6 +72,9 @@ void AMissile::Tick(float DeltaTime)
 			{
 				SetActorLocation(OutHit.Location);
 				UE_LOG(LogTemp, Warning, TEXT("Missile collided with : %s"), *OutHit.GetActor()->GetName())
+
+				ARobot* HitRobot = Cast<ARobot>(OutHit.GetActor());
+				HitRobot->GetHit();
 				Explode();
 			}
 			

@@ -28,6 +28,8 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	void GetHit();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -67,6 +69,8 @@ private:
 
 	/* TEST VARIALBE*/
 	float drawLine = 0.0f;
+	class UMaterial* ShieldMaterialHelper;
+	class UMaterialInstanceDynamic* ShieldMaterial;
 
 	//The Robot collision capsule
 	UPROPERTY(VisibleAnywhere, Category = "Robot")
@@ -75,6 +79,9 @@ private:
 	//The robots shield collision capsule. Slightly bigger so when the shield is gone, missile can miss the shield.
 	UPROPERTY(VisibleAnywhere, Category = "Robot")
 		class UCapsuleComponent* ShieldCollisionCapsule;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
+		class UStaticMeshComponent* RobotShield;
 
 	//The in Development Camera - Should be remove and put in an observer in final version
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
