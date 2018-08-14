@@ -66,16 +66,16 @@ void AMissile::Tick(float DeltaTime)
 			if (OutHit.GetActor()->GetName().Compare(this->GetOwner()->GetName()) == 0)
 			{
 				SetActorLocation(DesiredEndLocation);
-				UE_LOG(LogTemp, Warning, TEXT("Missile collided with its owner"))
 			}
 			else
 			{
 				SetActorLocation(OutHit.Location);
-				UE_LOG(LogTemp, Warning, TEXT("Missile collided with : %s"), *OutHit.GetActor()->GetName())
 
-				ARobot* HitRobot = Cast<ARobot>(OutHit.GetActor());
-				HitRobot->GetHit();
-				Explode();
+				if (ARobot* HitRobot = Cast<ARobot>(OutHit.GetActor()))
+				{
+					HitRobot->GetHit();
+					Explode();
+				}				
 			}
 			
 		}

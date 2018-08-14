@@ -106,17 +106,20 @@ void ARobot::BeginPlay()
 {
 	Super::BeginPlay();
 
+	SetRobotColor(FLinearColor::Blue);
+
 
 	if (ShieldMaterialHelper)
 	{
 		ShieldMaterial = RobotShield->CreateDynamicMaterialInstance(0, ShieldMaterialHelper);
 		RobotShield->SetMaterial(0, ShieldMaterial);
+		ShieldMaterial->SetVectorParameterValue("ShieldColor", RobotColor);
 	}
 
 
 
 	LeftThreadSpeed = 100;
-	RightThreadSpeed = 100;
+	RightThreadSpeed = 90;
 
 	UE_LOG(LogTemp, Warning, TEXT("LeftThreadSpeed = %i   RightThreadSpeed = %i"), LeftThreadSpeed, RightThreadSpeed)
 		
@@ -271,8 +274,8 @@ void ARobot::MoveRobot(float DeltaTime)
 			float AdjustedDeltaYaw = DeltaYaw * DeltaTime;
 
 			// Adjust toward our desired angle, and stop if we've reached it.
-			float MaxYawThisFrame = 180.0f * DeltaTime;
-			UE_LOG(LogTemp, Warning, TEXT("MaxYawThisTurn = %f    AdjustedYaw = %f    MovementAngle = %f"), MaxYawThisFrame, AdjustedDeltaYaw, MovementAngle.Yaw)
+			float MaxYawThisFrame = 50.0f * DeltaTime;
+			//UE_LOG(LogTemp, Warning, TEXT("MaxYawThisTurn = %f    AdjustedYaw = %f    MovementAngle = %f"), MaxYawThisFrame, AdjustedDeltaYaw, MovementAngle.Yaw)
 			if (MaxYawThisFrame > FMath::Abs(AdjustedDeltaYaw))
 			{
 				RobotDirection->SetWorldRotation(MovementAngle);
@@ -297,20 +300,26 @@ void ARobot::MoveRobot(float DeltaTime)
 	}
 }
 
+void ARobot::UpdateSensor()
+{
+	FVector PosStart = RobotDirection->GetComponentLocation();
+	FVector PosEnd1 = RobotDirection->GetForwardVector();
+
+	PosEnd1.X = FMath::Cos(FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw + 45.0f));
+	PosEnd1.Y = FMath::Sin(FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw + 45.0f));
+
+	PosEnd1 = (PosEnd1 * 125.0f) + PosStart;
+	GetWorld()->LineBatcher->DrawLine(PosStart, PosEnd1, FLinearColor::Blue, 1, 1.0f);
+}
+
 // Called every frame
 void ARobot::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 	//MoveRobot(DeltaTime);
+	UpdateSensor();
 
-	FVector PosStart = GetActorLocation();
-
-	drawLine += DeltaTime * 2;
-
-	FVector PosEnd = PosStart + FVector(45.0f, 45.0f - drawLine, 0.0f);
-
-	//GetWorld()->LineBatcher->DrawLine(PosStart, PosEnd, FLinearColor::Blue, 1, 1.0f);
 }
 
 // Called to bind functionality to input
@@ -318,6 +327,11 @@ void ARobot::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+}
+
+void ARobot::SetRobotColor(FLinearColor color)
+{
+	RobotColor = color;
 }
 
 void ARobot::GetHit()

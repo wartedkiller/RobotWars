@@ -10,7 +10,7 @@
 #define MAX_THREAD_SPEED 100.0f
 #define MIN_THREAH_SPEED -100.0f
 #define MAX_SPEED 11.0f
-#define TREAD_DISTANCE 15.5f
+#define TREAD_DISTANCE 15.0f
 
 UCLASS()
 class ROBOTWARS_API ARobot : public APawn
@@ -27,7 +27,7 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
+	void SetRobotColor(FLinearColor color);
 	void GetHit();
 
 protected:
@@ -40,6 +40,7 @@ protected:
 
 private:
 	void MoveRobot(float DeltaTime);
+	void UpdateSensor();
 
 ///********** VARIABLE **********
 
@@ -67,10 +68,9 @@ private:
 	int LeftThreadSpeed = 0;
 	int RightThreadSpeed = 0;
 
-	/* TEST VARIALBE*/
-	float drawLine = 0.0f;
 	class UMaterial* ShieldMaterialHelper;
 	class UMaterialInstanceDynamic* ShieldMaterial;
+	FLinearColor RobotColor;
 
 	//The Robot collision capsule
 	UPROPERTY(VisibleAnywhere, Category = "Robot")
@@ -90,4 +90,7 @@ private:
 	//The in Development Springarm - Should be remove and put in an observer in final version
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 		class USpringArmComponent* SpringArm;
+
+	/* TEST VARIALBE*/
+	// drawLine = 0.0f;
 };
