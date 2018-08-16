@@ -9,7 +9,7 @@
 
 #define MAX_THREAD_SPEED 100.0f
 #define MIN_THREAH_SPEED -100.0f
-#define MAX_SPEED 11.0f
+#define MAX_SPEED 100.0f				//In cm/s
 #define TREAD_DISTANCE 15.0f
 
 UCLASS()
@@ -65,8 +65,8 @@ protected:
 
 
 private:
-	int LeftThreadSpeed = 0;
-	int RightThreadSpeed = 0;
+	int32 LeftThreadSpeed = 0;
+	int32 RightThreadSpeed = 0;
 
 	class UMaterial* ShieldMaterialHelper;
 	class UMaterialInstanceDynamic* ShieldMaterial;

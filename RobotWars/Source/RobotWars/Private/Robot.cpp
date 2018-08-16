@@ -42,16 +42,6 @@ ARobot::ARobot()
 	{
 		RobotShield->SetStaticMesh(ShieldVisualAsset.Object);
 		
-		///This doesn't work. Need investigation or Reddit help.
-		/*static ConstructorHelpers::FObjectFinder<UMaterial> ShieldMaterial(TEXT("Material'/Game/Material/ShieldMaterial.ShieldMaterial'"));
-		if (ShieldMaterial.Succeeded())
-		{
-			RobotShield->SetMaterial(0, UMaterialInstanceDynamic::Create(ShieldMaterial.Object, RobotShield));
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Missile Blueprint could not be found so NO MISSILE WILL SPAWN"))
-		}*/
 	}
 	else
 	{
@@ -118,12 +108,14 @@ void ARobot::BeginPlay()
 
 
 
-	LeftThreadSpeed = 100;
-	RightThreadSpeed = 90;
+	LeftThreadSpeed = -100;
+	RightThreadSpeed = 100;
 
 	UE_LOG(LogTemp, Warning, TEXT("LeftThreadSpeed = %i   RightThreadSpeed = %i"), LeftThreadSpeed, RightThreadSpeed)
-		
-	FireMissile();
+
+		//FireMissile();
+
+		//RobotDirection->SetWorldRotation(FRotator(0.0f, 45.0f, 0.0f));
 }
 
 void ARobot::SetRobotName(FString RobotNewName)
@@ -180,124 +172,109 @@ bool ARobot::FireMissile()
 }
 
 
-//TODO Something with turning logic is wrong which make the radius at which the robot turn weird.
-//Like if the radius is always the same no mater the TreadSpeed.
-//But they are turning the right way.
-//Revisit the turning angle calculation.
+//TODO The Robot is turning super quickly when one of the thread i negative.
+//Might want to slow it down.
 void ARobot::MoveRobot(float DeltaTime)
 {
+	float FuturHeading = 0.0f;
+	FVector FuturPosition= FVector::ZeroVector;
 
-	FVector DesiredMovementDirection;
-	FVector CurrentPosition;
-	FVector DesiredPosition;
-	float DistanceTreadMiddle = 0.0f;
-	float RotationAngle = 0.0f;
-	float StartAngle = 0.0f;
-	float InnerRadians = 0.0f;
-	float CurrentHeading = 0.0f;
-	float x = 0.0f;
-	float y = 0.0f;
-	float u = 0.0f;
-	float v = 0.0f;
-	
+	//We take the absolute value of the Thread speed because the direction as been
+	//accounted for in the math behind the movement.
+	float DistanceLeftThread = (FMath::Abs(LeftThreadSpeed) / MAX_THREAD_SPEED) * MAX_SPEED * DeltaTime;
+	float DistanceRightThread = (FMath::Abs(RightThreadSpeed) / MAX_THREAD_SPEED) * MAX_SPEED * DeltaTime;
 
-	float lTreadSpeed = LeftThreadSpeed;
-	float rTreadSpeed = RightThreadSpeed;
-
-	float lTreadDist = lTreadSpeed;
-	float rTreadDist = rTreadSpeed;
-
-
-	//Setting the direction and the position of the Robot for the next frame
-	if (lTreadSpeed == rTreadSpeed) 
+	if (LeftThreadSpeed == RightThreadSpeed)
 	{
-		//Since there is no turning involved here, we simply get the current
-		//heading of the Robot and calculate it's futur position.
-		CurrentHeading = FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw);
-		DesiredMovementDirection = FVector(lTreadDist * FMath::Cos(CurrentHeading), rTreadDist * FMath::Sin(CurrentHeading), 0.0f);
+		FuturHeading = FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw);
+		FuturPosition = FVector(DistanceLeftThread * FMath::Cos(FuturHeading), DistanceRightThread * FMath::Sin(FuturHeading), 0.0f) + GetActorLocation();
 	}
-	else
+	//Turn with pivot on the left thread
+	else if (LeftThreadSpeed == 0)
 	{
-		if (rTreadSpeed == 0)
+		//I substract the angle so the Robot turns left because the RightThreadSpeed > LeftTreadSpeed.
+		FuturHeading = FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw) - FMath::Atan(DistanceRightThread / TREAD_DISTANCE);
+		
+		float MovementFromCenter = DistanceRightThread / 2;
+
+		FuturPosition = FVector(MovementFromCenter * FMath::Cos(FuturHeading), MovementFromCenter * FMath::Sin(FuturHeading), 0.0f) + GetActorLocation();
+
+	}
+	//Turn with pivot on the right thread
+	else if (RightThreadSpeed == 0)
+	{
+		FuturHeading = FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw) + FMath::Atan(DistanceLeftThread / TREAD_DISTANCE);
+
+		float MovementFromCenter = DistanceLeftThread / 2;
+
+		FuturPosition = FVector(MovementFromCenter * FMath::Cos(FuturHeading), MovementFromCenter * FMath::Sin(FuturHeading), 0.0f) + GetActorLocation();
+	}
+	//The Robot is turning left
+	else if (RightThreadSpeed > LeftThreadSpeed)
+	{
+		if (DistanceLeftThread == DistanceRightThread)
 		{
-			DistanceTreadMiddle = TREAD_DISTANCE / 2;
-			RotationAngle = lTreadDist * 360.0f / (2 * PI * TREAD_DISTANCE);
-			StartAngle = RobotDirection->GetComponentRotation().Yaw + 270.0f;
+			FuturHeading = FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw) - FMath::Atan(DistanceRightThread / (TREAD_DISTANCE / 2));
+			FuturPosition = GetActorLocation();
 		}
-		else if (lTreadSpeed == 0)
+		//Pivot point is outside of the robot which mean wide turn
+		else if (LeftThreadSpeed > 0)
 		{
-			DistanceTreadMiddle = TREAD_DISTANCE / 2;
-			RotationAngle = -rTreadDist * 360.0f / (2 * PI * TREAD_DISTANCE);
-			StartAngle = RobotDirection->GetComponentRotation().Yaw + 90.0f;
+		
+			float RadiusRight = 1 / ((1 / TREAD_DISTANCE) * ((DistanceRightThread / DistanceLeftThread) - 1)) + 15;
+
+			FuturHeading = FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw) - FMath::Atan(DistanceRightThread / RadiusRight);
+
+			float RadiusCenter = RadiusRight - (TREAD_DISTANCE / 2);
+			float MovementFromCenter = (DistanceRightThread / RadiusRight) * RadiusCenter;
+			FuturPosition = FVector(MovementFromCenter * FMath::Cos(FuturHeading), MovementFromCenter * FMath::Sin(FuturHeading), 0.0f) + GetActorLocation();
 		}
+		//Pivot point is between the center of the robot and the left thread
 		else
 		{
-			if (FMath::Abs(lTreadSpeed) > FMath::Abs(rTreadSpeed))
-			{
-				InnerRadians = rTreadDist * TREAD_DISTANCE / (lTreadDist - rTreadDist);
-				DistanceTreadMiddle = InnerRadians + TREAD_DISTANCE / 2;
-				RotationAngle = -rTreadDist * 360.0f / (2 * PI * InnerRadians);
-				StartAngle = RobotDirection->GetComponentRotation().Yaw + 270.0f;
-			}
-			else
-			{
-				InnerRadians = lTreadDist * TREAD_DISTANCE / (rTreadDist - lTreadDist);
-				DistanceTreadMiddle = InnerRadians + TREAD_DISTANCE / 2;
-				RotationAngle = -lTreadDist * 360.0f / (2 * PI * InnerRadians);
-				StartAngle = RobotDirection->GetComponentRotation().Yaw + 90.0f;
+			float RightThreadToRotationPoint = (TREAD_DISTANCE * DistanceRightThread) / (DistanceRightThread + DistanceLeftThread);
+			float CenterToRotationPoint = RightThreadToRotationPoint - (TREAD_DISTANCE / 2);
 
-			}
+			float MovementFromCenter = (DistanceRightThread / RightThreadToRotationPoint) * CenterToRotationPoint;
+
+			FuturHeading = FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw) - FMath::Atan(MovementFromCenter / CenterToRotationPoint);
+			FuturPosition = FVector(MovementFromCenter * FMath::Cos(FuturHeading), MovementFromCenter * FMath::Sin(FuturHeading), 0.0f) + GetActorLocation();
 		}
-
-		StartAngle = FMath::DegreesToRadians(StartAngle);
-		x = DistanceTreadMiddle * FMath::Cos(StartAngle);
-		y = DistanceTreadMiddle * FMath::Sin(StartAngle);
-
-		RotationAngle = FMath::DegreesToRadians(RotationAngle);
-		u = x * FMath::Cos(RotationAngle) - y * FMath::Sin(RotationAngle);
-		v = y * FMath::Cos(RotationAngle) + x * FMath::Sin(RotationAngle);
-		DesiredMovementDirection = FVector(u - x, v - y, 0.0f);
 	}
-
-	
-	//This is taken straight from Unreals "Tank VS Zombies" Tutorials.
-	//Might need to check if things are really necessary in our case but for now it "works".
-	//TODO Modify comments to match this game
-	if (!DesiredMovementDirection.IsNearlyZero())
+	//The Robot is turning Right
+	else if (LeftThreadSpeed > RightThreadSpeed)
 	{
-		// Rotate the tank. This process deals with TankDirection directly, not the actor/RootComponent, because we don't want to affect the camera.
-		FRotator MovementAngle = DesiredMovementDirection.Rotation();
-		FRotator CurrentAngle = RobotDirection->GetComponentRotation();
-		float DeltaYaw = URobotWarsStatics::FindDeltaAngleDegrees(CurrentAngle.Yaw, MovementAngle.Yaw);
-		if (DeltaYaw != 0.0f)
+		if (DistanceLeftThread == DistanceRightThread)
 		{
-			float AdjustedDeltaYaw = DeltaYaw * DeltaTime;
-
-			// Adjust toward our desired angle, and stop if we've reached it.
-			float MaxYawThisFrame = 50.0f * DeltaTime;
-			//UE_LOG(LogTemp, Warning, TEXT("MaxYawThisTurn = %f    AdjustedYaw = %f    MovementAngle = %f"), MaxYawThisFrame, AdjustedDeltaYaw, MovementAngle.Yaw)
-			if (MaxYawThisFrame > FMath::Abs(AdjustedDeltaYaw))
-			{
-				RobotDirection->SetWorldRotation(MovementAngle);
-			}
-			else
-			{
-				// Adjust as far as we can this frame, because we know we can't reach the goal yet.
-				RobotDirection->AddLocalRotation(FRotator(0.0f, FMath::Sign(AdjustedDeltaYaw) * MaxYawThisFrame, 0.0f));
-			}
-
-			//UE_LOG(LogTemp, Warning, TEXT("MovementAngle = %f    RobotLocation = %f"), MovementAngle.Yaw, RobotDirection->GetComponentRotation().Yaw)
+			FuturHeading = FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw) + FMath::Atan(DistanceRightThread / (TREAD_DISTANCE / 2));
+			FuturPosition = GetActorLocation();
 		}
-
-		// Move the tank
+		//Pivot point is outside of the robot which mean wide turn
+		else if (RightThreadSpeed > 0)
 		{
-			FVector MovementDirection = RobotDirection->GetForwardVector();
-			FVector Pos = GetActorLocation();
-			Pos.X += MovementDirection.X * 100.0f * DeltaTime;
-			Pos.Y += MovementDirection.Y * 100.0f * DeltaTime;
-			SetActorLocation(Pos);
+			float RadiusRight = 1 / ((1 / TREAD_DISTANCE) * ((DistanceRightThread / DistanceLeftThread) - 1));
+
+			FuturHeading = FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw) - FMath::Atan(DistanceRightThread / RadiusRight);
+
+			float RadiusCenter = RadiusRight + (TREAD_DISTANCE / 2);
+			float MovementFromCenter = (DistanceRightThread / RadiusRight) * RadiusCenter;
+			FuturPosition = FVector(MovementFromCenter * FMath::Cos(FuturHeading), MovementFromCenter * FMath::Sin(FuturHeading), 0.0f) + GetActorLocation();
+		}
+		//Pivot point is between the center of the robot and the right thread
+		else
+		{
+			float LeftThreadToRotationPoint = (TREAD_DISTANCE * DistanceLeftThread) / (DistanceRightThread + DistanceLeftThread);
+			float CenterToRotationPoint = LeftThreadToRotationPoint - (TREAD_DISTANCE / 2);
+
+			float MovementFromCenter = (DistanceLeftThread / LeftThreadToRotationPoint) * CenterToRotationPoint;
+
+			FuturHeading = FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw) + FMath::Atan(MovementFromCenter / CenterToRotationPoint);
+			FuturPosition = FVector(MovementFromCenter * FMath::Cos(FuturHeading), MovementFromCenter * FMath::Sin(FuturHeading), 0.0f) + GetActorLocation();
 		}
 	}
+
+	RobotDirection->SetWorldRotation(FRotator(0.0f, FMath::RadiansToDegrees(FuturHeading), 0.0f));
+	SetActorLocation(FuturPosition);
 }
 
 void ARobot::UpdateSensor()
@@ -317,7 +294,7 @@ void ARobot::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	//MoveRobot(DeltaTime);
+	MoveRobot(DeltaTime);
 	UpdateSensor();
 
 }
