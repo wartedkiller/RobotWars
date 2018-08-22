@@ -17,5 +17,5 @@ void ATestRobot::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetTreadSpeed(100, 100);
+	SetTreadSpeed(100, -50);
 }

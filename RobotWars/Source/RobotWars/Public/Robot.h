@@ -17,7 +17,7 @@ class ROBOTWARS_API ARobot : public APawn
 {
 	GENERATED_BODY()
 
-///********** METHOD **********
+///********** METHOD ***********************************************************************************************************************************************
 public:
 	// Sets default values for this pawn's properties
 	ARobot();
@@ -42,14 +42,12 @@ private:
 	void MoveRobot(float DeltaTime);
 	void UpdateSensor();
 
-///********** VARIABLE **********
+///********** VARIABLE **************************************************************************************************************************************************
 
 public:
 	FString RobotName = TEXT("DEFAULT");
-	FVector2D RobotPosition;
-	float RobotHeading;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Robot", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 	//UPROPERTY(EditAnywhere)
 		TSubclassOf<AMissile> MissileToSpawn;
 
@@ -76,10 +74,6 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Robot")
 		class UCapsuleComponent* RobotCollisionCapsule;
 
-	//The robots shield collision capsule. Slightly bigger so when the shield is gone, missile can miss the shield.
-	UPROPERTY(VisibleAnywhere, Category = "Robot")
-		class UCapsuleComponent* ShieldCollisionCapsule;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 		class UStaticMeshComponent* RobotShield;
 
@@ -92,5 +86,5 @@ private:
 		class USpringArmComponent* SpringArm;
 
 	/* TEST VARIALBE*/
-	// drawLine = 0.0f;
+
 };

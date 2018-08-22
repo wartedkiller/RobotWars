@@ -175,8 +175,10 @@ void ARobot::MoveRobot(float DeltaTime)
 
 	//This is the lenght of the movement vector.
 	//The direction (positive or negative) has been accounted for in the math.
-	float DistanceLeftTread = (FMath::Abs(LeftTreadSpeed) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
-	float DistanceRightTread = (FMath::Abs(RightTreadSpeed) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
+	/*float DistanceLeftTread = (FMath::Abs(LeftTreadSpeed) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
+	float DistanceRightTread = (FMath::Abs(RightTreadSpeed) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;*/
+	float DistanceLeftTread = (LeftTreadSpeed / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
+	float DistanceRightTread = (RightTreadSpeed / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
 
 	//Case 1 : The Robot is moving without turning.
 	//There is no math for this case since it's trivial.
@@ -218,14 +220,6 @@ void ARobot::MoveRobot(float DeltaTime)
 		///Case 4 RightTread
 		else if (LeftTreadSpeed > 0)
 		{
-		
-			/*float RadiusRight = 1 / ((1 / TREAD_DISTANCE) * ((DistanceRightTread / DistanceLeftTread) - 1)) + 15;
-
-			FuturHeading -= FMath::Atan(DistanceRightTread / RadiusRight);
-
-			float RadiusCenter = RadiusRight - (TREAD_DISTANCE / 2);
-			float MovementFromCenter = (DistanceRightTread / RadiusRight) * RadiusCenter;*/
-
 			float RadiusLeft = TREAD_DISTANCE / ((DistanceRightTread / DistanceLeftTread) - 1);
 			float RadiusCenter = RadiusLeft + (TREAD_DISTANCE / 2);
 			float MovementFromCenter = (DistanceLeftTread * RadiusCenter) / RadiusLeft;
@@ -237,7 +231,7 @@ void ARobot::MoveRobot(float DeltaTime)
 		///Case 5 RightTread
 		else
 		{
-			float RightThreadToRotationPoint = (TREAD_DISTANCE * DistanceRightTread) / (DistanceRightTread + DistanceLeftTread);
+			float RightThreadToRotationPoint = (TREAD_DISTANCE * DistanceRightTread) / (DistanceRightTread + FMath::Abs(DistanceLeftTread));
 			float CenterToRotationPoint = RightThreadToRotationPoint - (TREAD_DISTANCE / 2);
 
 			float MovementFromCenter = (DistanceRightTread / RightThreadToRotationPoint) * CenterToRotationPoint;
@@ -267,7 +261,7 @@ void ARobot::MoveRobot(float DeltaTime)
 		//Pivot point is between the center of the robot and the right thread
 		else
 		{
-			float LeftThreadToRotationPoint = (TREAD_DISTANCE * DistanceLeftTread) / (DistanceRightTread + DistanceLeftTread);
+			float LeftThreadToRotationPoint = (TREAD_DISTANCE * DistanceLeftTread) / (FMath::Abs(DistanceRightTread) + DistanceLeftTread);
 			float CenterToRotationPoint = LeftThreadToRotationPoint - (TREAD_DISTANCE / 2);
 
 			float MovementFromCenter = (DistanceLeftTread / LeftThreadToRotationPoint) * CenterToRotationPoint;
