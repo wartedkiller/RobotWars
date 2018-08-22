@@ -7,7 +7,7 @@
 #include "Missile.h"
 #include "Robot.generated.h"
 
-#define MAX_THREAD_SPEED 100.0f
+#define MAX_TREAD_SPEED 100.0f
 #define MIN_THREAH_SPEED -100.0f
 #define MAX_SPEED 100.0f				//In cm/s
 #define TREAD_DISTANCE 15.0f
@@ -34,7 +34,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	void SetRobotName(FString RobotNewName);
-	void SetThreadSpeed(float LeftThread, float RightThread);
+	void SetTreadSpeed(float LeftThread, float RightThread);
 	
 	bool FireMissile();
 
@@ -65,8 +65,8 @@ protected:
 
 
 private:
-	int32 LeftThreadSpeed = 0;
-	int32 RightThreadSpeed = 0;
+	int32 LeftTreadSpeed = 0;
+	int32 RightTreadSpeed = 0;
 
 	class UMaterial* ShieldMaterialHelper;
 	class UMaterialInstanceDynamic* ShieldMaterial;
