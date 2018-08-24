@@ -17,5 +17,6 @@ void ATestRobot::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetTreadSpeed(100, -50);
+	SetTreadSpeed(10, 10);
+	FireMissile();
 }

@@ -8,7 +8,12 @@
 #include "Robot.h"
 
 
-// Sets default values
+/****************************************************
+IF ANYTHING CHANGE IN THE CONSTRUCTOR OF THIS CLASS,
+THE ENGINE MUST BE RESTARTED TO SEE THE CHANGE.
+FAILING TO DO SO WILL RESULT IN SEEING WEIRD RESULT
+OF WHAT YOU ARE TRYING TO DO.
+****************************************************/
 AMissile::AMissile()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -27,6 +32,7 @@ AMissile::AMissile()
 	MissileSprite = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("RobotSprite"));
 	MissileSprite->AttachToComponent(MissileDirection, FAttachmentTransformRules::KeepWorldTransform);
 
+	MovementCollisionProfile = TEXT("Projectile:Fly");
 
 }
 
@@ -51,6 +57,7 @@ void AMissile::Tick(float DeltaTime)
 	FVector CurrentLocation = GetActorLocation();
 	//Add the distance flown by the missile during DeltaTime
 	FVector DesiredEndLocation = CurrentLocation + ((DeltaTime * MISSILE_SPEED) * GetTransform().GetUnitAxis(EAxis::X));
+
 	
 	//Check for collision
 	if (UWorld* World = GetWorld())
@@ -63,7 +70,7 @@ void AMissile::Tick(float DeltaTime)
 		//Else move the missile forward
 		if (World->SweepSingleByProfile(OutHit, CurrentLocation, DesiredEndLocation, FQuat::Identity, MovementCollisionProfile, CollisionShape))
 		{
-			if (OutHit.GetActor()->GetName().Compare(this->GetOwner()->GetName()) == 0)
+			if (OutHit.GetActor()->GetName().Compare(this->GetOwner()->GetName()) == 0 || OutHit.GetActor()->GetName().Compare(this->GetName()) == 0)
 			{
 				SetActorLocation(DesiredEndLocation);
 			}
@@ -77,7 +84,6 @@ void AMissile::Tick(float DeltaTime)
 					Explode();
 				}				
 			}
-			
 		}
 		else
 		{

@@ -13,28 +13,47 @@
 #include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/StaticMesh.h"
+#include "MissileSystem.h"
+#include "EnergySystem.h"
 
-// Sets default values
+/****************************************************
+IF ANYTHING CHANGE IN THE CONSTRUCTOR OF THIS CLASS,
+THE ENGINE MUST BE RESTARTED TO SEE THE CHANGE.
+FAILING TO DO SO WILL RESULT IN SEEING WEIRD RESULT
+OF WHAT YOU ARE TRYING TO DO.
+****************************************************/
 ARobot::ARobot()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	//Creating a USceneComponent as the RootComponent of the Robot since
+	//USceneComponent are the lightest object that keep track of it's position.
 	if (!RootComponent)
 	{
 		RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RobotBase"));
 	}
 
+	//Creating the Robot debug UArrowComponent. It will not render in the final game
+	//but it will still help keeping track of the direction of the Robot.
 	RobotDirection = CreateDefaultSubobject<UArrowComponent>(TEXT("RobotDirection"));
 	RobotDirection->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
 	
+	//Creating the default Robot sprite.
+	//NOTE: Paper2D is an abandon ware in Unreal 4. While it will always be
+	//in the Engine, it won't receive future upgrade. A solution to this is
+	//using a 3D plane like it's done for the shield.
 	RobotSprite = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("RobotSprite"));
 	RobotSprite->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
 
+	//Creating the UCapsuleComponent used for collision. Since it's a 2D game, the Z position (height)
+	//of the Robots is not important. That's why the Capsule is 200 unit high.
 	RobotCollisionCapsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RobotCollisionCapsule"));
 	RobotCollisionCapsule->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
 	RobotCollisionCapsule->InitCapsuleSize(23.0f, 200.0f); 
 
+	//Creating the UStaticMeshComponent for the Shield and assingning a 2D plane
+	//as it's mesh.
 	RobotShield = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RobotShield"));
 	RobotShield->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> ShieldVisualAsset(TEXT("/Engine/BasicShapes/Plane"));
@@ -44,9 +63,10 @@ ARobot::ARobot()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Missile Blueprint could not be found so NO MISSILE WILL SPAWN"))
+		UE_LOG(LogTemp, Warning, TEXT("Could not load plane static mesh for the Shield"))
 	}
 
+	//Loading the Shield material to be used in the BeginPlay() method.
 	static ConstructorHelpers::FObjectFinder<UMaterial> ShieldMaterialGetter(TEXT("Material'/Game/Material/ShieldMaterial.ShieldMaterial'"));
 	if (ShieldMaterialGetter.Succeeded())
 	{
@@ -55,19 +75,22 @@ ARobot::ARobot()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Missile Blueprint could not be found so NO MISSILE WILL SPAWN"))
+		UE_LOG(LogTemp, Warning, TEXT("Could not load the Shield material."))
 	}
 
-	static ConstructorHelpers::FObjectFinder<UBlueprint> MissileBP(TEXT("Blueprint'/Game/Blueprint/Missile_BP.Missile_BP'"));
-	if (MissileBP.Succeeded())
+	//Creating a UMissileSystem so this Robot can Fire Missiles.
+	MissileSystem = CreateDefaultSubobject<UMissileSystem>(TEXT("Missilesystem"));
+
+	//Creating the UEnergySystem for the Robot.
+	EnergySystem = CreateDefaultSubobject<UEnergySystem>(TEXT("EnergySystem"));
+
+	//Initializing the SensorArray so there is no Sensor.
+	for (int32 i = 0; i < MAX_SENSORS - 1; i++)
 	{
-		MissileToSpawn = MissileBP.Object->GeneratedClass;
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Missile Blueprint could not be found so NO MISSILE WILL SPAWN"))
+		SensorArray[i] = SENSOR_NONE;
 	}
 
+	//This will be remove and placed in the spectator.
 	///If something is changed to the SpringArm or the CameraComponent, you must restart UE4
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->TargetArmLength = 500.0f;
@@ -79,6 +102,7 @@ ARobot::ARobot()
 	SpringArm->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
 	SpringArm->SetWorldRotation(FRotator(-90.0f, 0.0f, 0.0f));
 
+	//This will be remove and placed in the spectator.
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("RobotCamera"));
 	CameraComponent->bUsePawnControlRotation = false;
 	CameraComponent->ProjectionMode = ECameraProjectionMode::Orthographic;
@@ -86,8 +110,6 @@ ARobot::ARobot()
 	CameraComponent->AspectRatio = 4.0f / 3.0f;
 	CameraComponent->AttachToComponent(SpringArm, FAttachmentTransformRules::KeepWorldTransform, SpringArm->SocketName);
 	CameraComponent->SetWorldRotation(FRotator(-90.0f, 0.0f, 0.0f));
-	
-	//MissileToSpawn = CreateDefaultSubobject<AMissile>(TEXT("RobotMissile"));
 }
 
 // Called when the game starts or when spawned
@@ -95,10 +117,15 @@ void ARobot::BeginPlay()
 {
 	Super::BeginPlay();
 
+	//Temporary call of SetRobotColor(). The final color will be set by the GameMode when the game begin.
 	SetRobotColor(FLinearColor::Blue);
 
+	//Shifting the default Robot sprit a little backward so it's centered. This will move and
+	//will make a check if the Player replaced the DefaultRobotSprite.
 	RobotSprite->SetRelativeLocation(FVector(-5, 0, 1));
 
+	//Creating a dynamic material so we can change the color (the opacity in our case) in real time.
+	//Also change the color of the shield and scales it to it's final size.
 	if (ShieldMaterialHelper)
 	{
 		ShieldMaterial = RobotShield->CreateDynamicMaterialInstance(0, ShieldMaterialHelper);
@@ -106,7 +133,7 @@ void ARobot::BeginPlay()
 		ShieldMaterial->SetVectorParameterValue("ShieldColor", RobotColor);
 		RobotShield->SetWorldScale3D(FVector(0.55f, 0.55f, 0.55f));
 	}
-
+	
 }
 
 void ARobot::SetRobotName(FString RobotNewName)
@@ -140,26 +167,10 @@ void ARobot::SetTreadSpeed(float LeftThread, float RightThread)
 	RightTreadSpeed = RightThread;
 }
 
-bool ARobot::FireMissile()
+void ARobot::FireMissile()
 {
-	if (MissileToSpawn)
-	{
-		UWorld* World = GetWorld();
-		if (World)
-		{
-			FActorSpawnParameters SpawnParams;
-			SpawnParams.Owner = this;
-			
-			FRotator CurrentRotation = RobotDirection->GetComponentRotation();
+	MissileSystem->Fire(this, GetActorLocation(), RobotDirection->GetComponentRotation());
 
-			FVector CurrentPosition = GetActorLocation();
-
-			World->SpawnActor<AMissile>(MissileToSpawn, CurrentPosition, CurrentRotation, SpawnParams);
-			UE_LOG(LogTemp, Warning, TEXT("Missile Fire"))
-			return true;
-		}
-	}
-	return false;
 }
 
 
@@ -292,9 +303,9 @@ void ARobot::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	EnergySystem->UpdateEnergySystem(DeltaTime, SensorArray);
 	MoveRobot(DeltaTime);
 	UpdateSensor();
-
 }
 
 // Called to bind functionality to input

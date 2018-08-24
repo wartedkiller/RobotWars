@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Missile.h"
+#include "RobotWarsEnum.h"
 #include "Robot.generated.h"
 
 #define MAX_TREAD_SPEED 100.0f
@@ -36,7 +37,7 @@ protected:
 	void SetRobotName(FString RobotNewName);
 	void SetTreadSpeed(float LeftThread, float RightThread);
 	
-	bool FireMissile();
+	void FireMissile();
 
 private:
 	void MoveRobot(float DeltaTime);
@@ -46,10 +47,6 @@ private:
 
 public:
 	FString RobotName = TEXT("DEFAULT");
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
-	//UPROPERTY(EditAnywhere)
-		TSubclassOf<AMissile> MissileToSpawn;
 
 protected:
 
@@ -70,12 +67,17 @@ private:
 	class UMaterialInstanceDynamic* ShieldMaterial;
 	FLinearColor RobotColor;
 
+	SENSORTYPE SensorArray[MAX_SENSORS];
+
 	//The Robot collision capsule
 	UPROPERTY(VisibleAnywhere, Category = "Robot")
 		class UCapsuleComponent* RobotCollisionCapsule;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 		class UStaticMeshComponent* RobotShield;
+
+	UPROPERTY()
+		class UEnergySystem* EnergySystem;
 
 	//The in Development Camera - Should be remove and put in an observer in final version
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
@@ -86,5 +88,8 @@ private:
 		class USpringArmComponent* SpringArm;
 
 	/* TEST VARIALBE*/
+	TArray<SYSTEM> test;
 
+	UPROPERTY()
+		class UMissileSystem* MissileSystem;
 };
