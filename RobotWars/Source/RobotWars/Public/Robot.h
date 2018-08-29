@@ -6,6 +6,7 @@
 #include "GameFramework/Pawn.h"
 #include "Missile.h"
 #include "RobotWarsEnum.h"
+#include "SensorSystem.h"
 #include "Robot.generated.h"
 
 #define MAX_TREAD_SPEED 100.0f
@@ -28,25 +29,41 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
 	void SetRobotColor(FLinearColor color);
 	void GetHit();
+	USensorSystem* GetSensor(int index);
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
 	void SetRobotName(FString RobotNewName);
 	void SetTreadSpeed(float LeftThread, float RightThread);
 	
+	//WeaponSystem methods
 	void FireMissile();
+
+	//EnergySystem methods
+	int32 GetGeneratorStructur();
+	int32 GetGeneratorOutput();
+	int32 SetSystemChargePriorites(SYSTEM priorities[NUM_ENERGY_SYSTEMS]);
+	float GetSystemEnergy(SYSTEM type);
+	void SetSystemChargeRate(SYSTEM type, int32 rate);
+
+	//Sensor method
+	int32 AddSensor(int port, SENSORTYPE type, int angle, int width, int range);
 
 private:
 	void MoveRobot(float DeltaTime);
 	void UpdateSensor();
+	void UpdateEnergy(float DeltaTime);
 
 ///********** VARIABLE **************************************************************************************************************************************************
 
 public:
 	FString RobotName = TEXT("DEFAULT");
+	USensorSystem* SensorArray[MAX_SENSORS];
 
 protected:
 
@@ -66,8 +83,6 @@ private:
 	class UMaterial* ShieldMaterialHelper;
 	class UMaterialInstanceDynamic* ShieldMaterial;
 	FLinearColor RobotColor;
-
-	SENSORTYPE SensorArray[MAX_SENSORS];
 
 	//The Robot collision capsule
 	UPROPERTY(VisibleAnywhere, Category = "Robot")

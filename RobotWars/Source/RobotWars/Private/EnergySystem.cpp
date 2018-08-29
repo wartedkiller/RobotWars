@@ -95,7 +95,7 @@ void UEnergySystem::SetSystemChargeRate(SYSTEM type, int32 rate)
 
 
 //TODO Update Shield and Sensor based on Energy. Probably be done in the robot.
-void UEnergySystem::UpdateEnergySystem(float DeltaTime, SENSORTYPE SensorArray[MAX_SENSORS])
+void UEnergySystem::UpdateEnergySystem(float DeltaTime, ARobot* robot)
 {
 	TArray<SYSTEM> temp = SystemPriority;
 
@@ -103,6 +103,26 @@ void UEnergySystem::UpdateEnergySystem(float DeltaTime, SENSORTYPE SensorArray[M
 
 	for (SYSTEM CurrentSystem : SystemPriority)
 	{
+		//UE_LOG(LogTemp, Warning, TEXT("Energy left to spend this turn = %f"), EnergyToSpendThisTurn)
+
+		//switch (CurrentSystem)
+		//{
+		//case SYSTEM_SHIELDS:
+		//	UE_LOG(LogTemp, Warning, TEXT("CurrentSystem = SYSTEM_SHIELD"))
+		//	break;
+		//case SYSTEM_SENSORS:
+		//	UE_LOG(LogTemp, Warning, TEXT("CurrentSystem = SYSTEM_SENSORS"))
+		//		break;
+		//case SYSTEM_LASERS:
+		//	UE_LOG(LogTemp, Warning, TEXT("CurrentSystem = SYSTEM_LASERS"))
+		//		break;
+		//case SYSTEM_MISSILES:
+		//	UE_LOG(LogTemp, Warning, TEXT("CurrentSystem = SYSTEM_MISSILES"))
+		//		break;
+		//default:
+		//	break;
+		//}
+
 		//Stop giving energy if there is no energy to give.
 		if (EnergyToSpendThisTurn == 0)
 		{
@@ -114,17 +134,20 @@ void UEnergySystem::UpdateEnergySystem(float DeltaTime, SENSORTYPE SensorArray[M
 		{
 		case SYSTEM_SHIELDS:
 			//If the System is fully charged, don't try to give it Energy.
-			if (!(CurrentEnergy[SYSTEM_SHIELDS] >= MAX_SHIELD_ENERGY))
+			if (CurrentEnergy[SYSTEM_SHIELDS] < MAX_SHIELD_ENERGY)
 			{
-				if (EnergyToSpendThisTurn >= EnergyChargeRatePerSecond[SYSTEM_SHIELDS])
+				float EnergyToSpendOnShield = EnergyChargeRatePerSecond[SYSTEM_SHIELDS] * DeltaTime;
+				if (EnergyToSpendThisTurn >= EnergyToSpendOnShield)
 				{
-					EnergyToSpendThisTurn -= EnergyChargeRatePerSecond[SYSTEM_SHIELDS];
-					CurrentEnergy[SYSTEM_SHIELDS] += EnergyChargeRatePerSecond[SYSTEM_SHIELDS];
+					//UE_LOG(LogTemp, Warning, TEXT("EnergyToSpendThisTurn = %f    EnergyChargeRatePerSecond[SYSTEM_SHIELDS] = %f"), EnergyToSpendThisTurn, EnergyToSpendOnShield)
+					EnergyToSpendThisTurn -= EnergyToSpendOnShield;
+					CurrentEnergy[SYSTEM_SHIELDS] += EnergyToSpendOnShield;
 				}
 				else
 				{
 					CurrentEnergy[SYSTEM_SHIELDS] += EnergyToSpendThisTurn;
 					EnergyToSpendThisTurn = 0;
+					//UE_LOG(LogTemp, Warning, TEXT("Energy spent on shield this turn = %f"), EnergyToSpendThisTurn)
 				}
 
 				//Check for extra energy in system. If system is overcharged
@@ -135,37 +158,44 @@ void UEnergySystem::UpdateEnergySystem(float DeltaTime, SENSORTYPE SensorArray[M
 					CurrentEnergy[SYSTEM_SHIELDS] = MAX_SHIELD_ENERGY;
 					EnergyToSpendThisTurn += ExtraEnergy;
 				}
+				
 			}
 			break;
 		case SYSTEM_SENSORS:
-			for (int32 i = 0; i < MAX_SENSORS - 1; i++)
+			for (int32 i = 0; i < MAX_SENSORS; i++)
 			{
-				switch (SensorArray[i])
+				USensorSystem* CurrentSensor = robot->GetSensor(i);
+				if (CurrentSensor->IsSensorOn())
 				{
-				case SENSOR_RADAR:
-					if (EnergyToSpendThisTurn >= RADAR_SENSOR_ENERGY_COST / 60 * DeltaTime)
+					switch (CurrentSensor->GetTypeOfSensor())
 					{
-						EnergyToSpendThisTurn -= RADAR_SENSOR_ENERGY_COST / 60 * DeltaTime;
-						//Turn on Sensor
+					case SENSOR_RADAR:
+						if (EnergyToSpendThisTurn >= RADAR_SENSOR_ENERGY_COST / 60 * DeltaTime)
+						{
+							EnergyToSpendThisTurn -= RADAR_SENSOR_ENERGY_COST / 60 * DeltaTime;
+							CurrentSensor->SetIsEnoughEnergy(true);
+						}
+						else
+						{
+							CurrentSensor->SetIsEnoughEnergy(false);
+						}
+						break;
+					case SENSOR_RANGE:
+						if (EnergyToSpendThisTurn >= RANGE_SENSOR_ENERGY_COST / 60 * DeltaTime)
+						{
+							//UE_LOG(LogTemp, Warning, TEXT("EnergyToSpendThisTurn = %f    EnergySpentOnSensor = %f"), EnergyToSpendThisTurn, RANGE_SENSOR_ENERGY_COST / 60 * DeltaTime)
+
+							EnergyToSpendThisTurn -= RANGE_SENSOR_ENERGY_COST / 60 * DeltaTime;
+							CurrentSensor->SetIsEnoughEnergy(true);
+						}
+						else
+						{
+							CurrentSensor->SetIsEnoughEnergy(false);
+						}
+						break;
+					default:
+						break;
 					}
-					else
-					{
-						//Turn off Sensor
-					}
-					break;
-				case SENSOR_RANGE:
-					if (EnergyToSpendThisTurn >= RANGE_SENSOR_ENERGY_COST / 60 * DeltaTime)
-					{
-						EnergyToSpendThisTurn -= RANGE_SENSOR_ENERGY_COST / 60 * DeltaTime;
-						//Turn on Sensor
-					}
-					else
-					{
-						//Turn off Sensor
-					}
-					break;
-				default:
-					break;
 				}
 			}
 			break;
@@ -173,10 +203,12 @@ void UEnergySystem::UpdateEnergySystem(float DeltaTime, SENSORTYPE SensorArray[M
 			//If the System is fully charged, don't try to give it Energy.
 			if (!(CurrentEnergy[SYSTEM_LASERS] >= MAX_LASER_ENERGY))
 			{
-				if (EnergyToSpendThisTurn >= EnergyChargeRatePerSecond[SYSTEM_LASERS])
+				float EnergyToSpendOnLaser = EnergyChargeRatePerSecond[SYSTEM_LASERS] * DeltaTime;
+
+				if (EnergyToSpendThisTurn >= EnergyToSpendOnLaser)
 				{
-					EnergyToSpendThisTurn -= EnergyChargeRatePerSecond[SYSTEM_LASERS];
-					CurrentEnergy[SYSTEM_LASERS] += EnergyChargeRatePerSecond[SYSTEM_LASERS];
+					EnergyToSpendThisTurn -= EnergyToSpendOnLaser;
+					CurrentEnergy[SYSTEM_LASERS] += EnergyToSpendOnLaser;
 				}
 				else
 				{
@@ -198,10 +230,11 @@ void UEnergySystem::UpdateEnergySystem(float DeltaTime, SENSORTYPE SensorArray[M
 			//If the System is fully charged, don't try to give it Energy.
 			if (!(CurrentEnergy[SYSTEM_MISSILES] >= MAX_LASER_ENERGY))
 			{
-				if (EnergyToSpendThisTurn >= EnergyChargeRatePerSecond[SYSTEM_MISSILES])
+				float EnergyToSpendOnMissile = EnergyChargeRatePerSecond[SYSTEM_MISSILES] * DeltaTime;
+				if (EnergyToSpendThisTurn >= EnergyToSpendOnMissile)
 				{
-					EnergyToSpendThisTurn -= EnergyChargeRatePerSecond[SYSTEM_MISSILES];
-					CurrentEnergy[SYSTEM_MISSILES] += EnergyChargeRatePerSecond[SYSTEM_MISSILES];
+					EnergyToSpendThisTurn -= EnergyToSpendOnMissile;
+					CurrentEnergy[SYSTEM_MISSILES] += EnergyToSpendOnMissile;
 				}
 				else
 				{
@@ -223,5 +256,6 @@ void UEnergySystem::UpdateEnergySystem(float DeltaTime, SENSORTYPE SensorArray[M
 			break;
 		}
 	}
+	UE_LOG(LogTemp, Warning, TEXT("---------------------End of Energy distribution---------------------"))
 }
 

@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "RobotWarsEnum.h"
+#include "SensorSystem.h"
+#include "Robot.h"
 #include "EnergySystem.generated.h"
 
 //TODO Change Energy cost value to /sec instead of /min since DeltaTime is in sec?
@@ -27,6 +29,9 @@ UCLASS()
 class ROBOTWARS_API UEnergySystem : public UObject
 {
 	GENERATED_BODY()
+
+		///********** METHOD **************************************************************************************************************************************************
+
 public:
 	UEnergySystem();
 
@@ -35,12 +40,12 @@ public:
 	int32 SetSystemChargePriorites(SYSTEM priorities[NUM_ENERGY_SYSTEMS]);
 	float GetSystemEnergy(SYSTEM type);
 	void SetSystemChargeRate(SYSTEM type, int32 rate);
-	void UpdateEnergySystem(float DeltaTime, SENSORTYPE SensorArray[MAX_SENSORS]);
+	void UpdateEnergySystem(float DeltaTime, ARobot* robot);
 
 
 	///********** VARIABLE **************************************************************************************************************************************************
 private:
-	int32 CurrentEnergy[NUM_ENERGY_SYSTEMS];
+	float CurrentEnergy[NUM_ENERGY_SYSTEMS];
 	int32 CurrentGeneratorStructure;
 	int32 EnergyChargeRatePerSecond[NUM_ENERGY_SYSTEMS];
 

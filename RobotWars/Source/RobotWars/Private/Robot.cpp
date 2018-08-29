@@ -15,6 +15,7 @@
 #include "Engine/StaticMesh.h"
 #include "MissileSystem.h"
 #include "EnergySystem.h"
+#include "SensorSystem.h"
 
 /****************************************************
 IF ANYTHING CHANGE IN THE CONSTRUCTOR OF THIS CLASS,
@@ -84,12 +85,6 @@ ARobot::ARobot()
 	//Creating the UEnergySystem for the Robot.
 	EnergySystem = CreateDefaultSubobject<UEnergySystem>(TEXT("EnergySystem"));
 
-	//Initializing the SensorArray so there is no Sensor.
-	for (int32 i = 0; i < MAX_SENSORS - 1; i++)
-	{
-		SensorArray[i] = SENSOR_NONE;
-	}
-
 	//This will be remove and placed in the spectator.
 	///If something is changed to the SpringArm or the CameraComponent, you must restart UE4
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
@@ -134,6 +129,11 @@ void ARobot::BeginPlay()
 		RobotShield->SetWorldScale3D(FVector(0.55f, 0.55f, 0.55f));
 	}
 	
+	//Initialize all Sensor to SENSOR_NONE.
+	for (int32 i = 0; i < MAX_SENSORS; i++)
+	{
+		SensorArray[i] = NewObject<USensorSystem>(this, USensorSystem::StaticClass());
+	}
 }
 
 void ARobot::SetRobotName(FString RobotNewName)
@@ -173,6 +173,40 @@ void ARobot::FireMissile()
 
 }
 
+int32 ARobot::GetGeneratorStructur()
+{
+	return EnergySystem->GetGeneratorStructur();
+}
+
+int32 ARobot::GetGeneratorOutput()
+{
+	return EnergySystem->GetGeneratorOutput();
+}
+
+int32 ARobot::SetSystemChargePriorites(SYSTEM priorities[NUM_ENERGY_SYSTEMS])
+{
+	return EnergySystem->SetSystemChargePriorites(priorities);
+}
+
+
+float ARobot::GetSystemEnergy(SYSTEM type)
+{
+	return EnergySystem->GetSystemEnergy(type);
+}
+
+void ARobot::SetSystemChargeRate(SYSTEM type, int32 rate)
+{
+	EnergySystem->SetSystemChargeRate(type, rate);
+}
+
+int32 ARobot::AddSensor(int port, SENSORTYPE type, int angle, int width, int range)
+{
+	if (SensorArray[port]->GetTypeOfSensor() == SENSOR_NONE)
+	{
+		return SensorArray[port]->AddSensor(type, angle, width, range);
+	}
+	return 0;
+}
 
 //TODO The Robot is turning super quickly when one of the thread is negative.
 //Might want to slow it down.
@@ -288,14 +322,53 @@ void ARobot::MoveRobot(float DeltaTime)
 
 void ARobot::UpdateSensor()
 {
+	for (int32 i = 0; i < MAX_SENSORS; i++)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Updating Sensor[%i]"), i)
+		if (SensorArray[i]->GetTypeOfSensor() != SENSOR_NONE || SensorArray[i]->IsEnoughEnergy() || SensorArray[i]->IsSensorOn())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Sensor[%i] is updatable"), i)
+			if (SensorArray[i]->GetTypeOfSensor() == SENSOR_RANGE)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Sensor[%i] is a SENSOR_RANGE"), i)
+				int32 SensorAngle = SensorArray[i]->GetSensorAngle();
+
+				FVector PosStart = RobotDirection->GetComponentLocation();
+				FVector PosEnd = RobotDirection->GetForwardVector();
+
+				PosEnd.X = FMath::Cos(FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw + SensorAngle));
+				PosEnd.Y = FMath::Sin(FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw + SensorAngle));
+
+				PosEnd = (PosEnd * RANGE_MAX_RANGE) + PosStart;
+				GetWorld()->LineBatcher->DrawLine(PosStart, PosEnd, RobotColor, 1, 2.0f);
+			}
+		}
+	}
+
+	/*int32 SensorAngle = SensorArray[0]->GetSensorAngle();
+
 	FVector PosStart = RobotDirection->GetComponentLocation();
-	FVector PosEnd1 = RobotDirection->GetForwardVector();
+	FVector PosEnd = RobotDirection->GetForwardVector();
 
-	PosEnd1.X = FMath::Cos(FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw + 45.0f));
-	PosEnd1.Y = FMath::Sin(FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw + 45.0f));
+	PosEnd.X = FMath::Cos(FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw + SensorAngle));
+	PosEnd.Y = FMath::Sin(FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw + SensorAngle));
 
-	PosEnd1 = (PosEnd1 * 125.0f) + PosStart;
-	GetWorld()->LineBatcher->DrawLine(PosStart, PosEnd1, FLinearColor::Blue, 1, 1.0f);
+	PosEnd = (PosEnd * RANGE_MAX_RANGE) + PosStart;
+	GetWorld()->LineBatcher->DrawLine(PosStart, PosEnd, RobotColor, 1, 1.0f);*/
+
+	//FVector PosStart = RobotDirection->GetComponentLocation();
+	//FVector PosEnd1 = RobotDirection->GetForwardVector();
+
+	//PosEnd1.X = FMath::Cos(FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw + 45.0f));
+	//PosEnd1.Y = FMath::Sin(FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw + 45.0f));
+
+	//PosEnd1 = (PosEnd1 * 125.0) + PosStart;
+	//GetWorld()->LineBatcher->DrawLine(PosStart, PosEnd1, RobotColor, 1, 2.0f);
+}
+
+void ARobot::UpdateEnergy(float DeltaTime)
+{
+	EnergySystem->UpdateEnergySystem(DeltaTime, this);
 }
 
 // Called every frame
@@ -303,7 +376,7 @@ void ARobot::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	EnergySystem->UpdateEnergySystem(DeltaTime, SensorArray);
+	UpdateEnergy(DeltaTime);
 	MoveRobot(DeltaTime);
 	UpdateSensor();
 }
@@ -332,5 +405,10 @@ void ARobot::GetHit()
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("%s got hit"), *GetName())
+}
+
+USensorSystem* ARobot::GetSensor(int index)
+{
+	return SensorArray[index];
 }
 
