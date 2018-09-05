@@ -48,6 +48,9 @@
 SourceArt/**/*.png
 SourceArt/**/*.tga
 
+# 3D model
+*.FBX
+
 # Binary Files
 Binaries/*
 Plugins/*/Binaries/*
