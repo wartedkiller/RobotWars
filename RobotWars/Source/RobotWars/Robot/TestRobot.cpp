@@ -17,7 +17,7 @@ void ATestRobot::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetTreadSpeed(10, 10);
+	SetTreadSpeed(30, -30);
 	FireMissile();
 	SetSystemChargeRate(SYSTEM_SHIELDS, 600);
 	
