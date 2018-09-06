@@ -20,6 +20,8 @@ void ATestRobot::BeginPlay()
 	SetTreadSpeed(30, -30);
 	FireMissile();
 	SetSystemChargeRate(SYSTEM_SHIELDS, 600);
+	SetSystemChargeRate(SYSTEM_LASERS, 200);
+	SetSystemChargeRate(SYSTEM_MISSILES, 300);
 	
 	AddSensor(0, SENSOR_RANGE, 90, 0, 0);
 	AddSensor(1, SENSOR_RANGE, -90, 0, 0);

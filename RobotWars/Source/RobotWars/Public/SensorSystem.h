@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "RobotWarsEnum.h"
+#include "Components/SceneComponent.h"
 #include "SensorSystem.generated.h"
 
 #define RANGE_MAX_RANGE  125
@@ -17,7 +18,7 @@
  * 
  */
 UCLASS()
-class ROBOTWARS_API USensorSystem : public UObject
+class ROBOTWARS_API USensorSystem : public USceneComponent
 {
 	GENERATED_BODY()
 
@@ -41,4 +42,8 @@ private:
 	int32 SensorAngle;
 	int32 SensorWidth;
 	int32 SensorRange;
+
+public:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sensor", meta = (AllowPrivateAccess = "true"))
+		class UStaticMeshComponent* TestSensor;
 };

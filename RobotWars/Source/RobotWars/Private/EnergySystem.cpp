@@ -12,6 +12,8 @@ UEnergySystem::UEnergySystem()
 		EnergyChargeRatePerSecond[i] = 0;
 	}
 
+	CurrentEnergy[SYSTEM_SHIELDS] = 400;
+
 	SystemPriority.Add(SYSTEM_SHIELDS);
 	SystemPriority.Add(SYSTEM_SENSORS);
 	SystemPriority.Add(SYSTEM_LASERS);
@@ -183,8 +185,6 @@ void UEnergySystem::UpdateEnergySystem(float DeltaTime, ARobot* robot)
 					case SENSOR_RANGE:
 						if (EnergyToSpendThisTurn >= RANGE_SENSOR_ENERGY_COST / 60 * DeltaTime)
 						{
-							//UE_LOG(LogTemp, Warning, TEXT("EnergyToSpendThisTurn = %f    EnergySpentOnSensor = %f"), EnergyToSpendThisTurn, RANGE_SENSOR_ENERGY_COST / 60 * DeltaTime)
-
 							EnergyToSpendThisTurn -= RANGE_SENSOR_ENERGY_COST / 60 * DeltaTime;
 							CurrentSensor->SetIsEnoughEnergy(true);
 						}
@@ -201,7 +201,7 @@ void UEnergySystem::UpdateEnergySystem(float DeltaTime, ARobot* robot)
 			break;
 		case SYSTEM_LASERS:
 			//If the System is fully charged, don't try to give it Energy.
-			if (!(CurrentEnergy[SYSTEM_LASERS] >= MAX_LASER_ENERGY))
+			if (CurrentEnergy[SYSTEM_LASERS] < MAX_LASER_ENERGY)
 			{
 				float EnergyToSpendOnLaser = EnergyChargeRatePerSecond[SYSTEM_LASERS] * DeltaTime;
 
@@ -218,17 +218,17 @@ void UEnergySystem::UpdateEnergySystem(float DeltaTime, ARobot* robot)
 
 				//Check for extra energy in system. If system is overcharged
 				//return the extra energy to the pool of available energy this turn.
-				if (CurrentEnergy[SYSTEM_LASERS] > MAX_SHIELD_ENERGY)
+				if (CurrentEnergy[SYSTEM_LASERS] > MAX_LASER_ENERGY)
 				{
-					float ExtraEnergy = CurrentEnergy[SYSTEM_LASERS] - MAX_SHIELD_ENERGY;
-					CurrentEnergy[SYSTEM_LASERS] = MAX_SHIELD_ENERGY;
+					float ExtraEnergy = CurrentEnergy[SYSTEM_LASERS] - MAX_LASER_ENERGY;
+					CurrentEnergy[SYSTEM_LASERS] = MAX_LASER_ENERGY;
 					EnergyToSpendThisTurn += ExtraEnergy;
 				}
 			}
 			break;
 		case SYSTEM_MISSILES:
 			//If the System is fully charged, don't try to give it Energy.
-			if (!(CurrentEnergy[SYSTEM_MISSILES] >= MAX_LASER_ENERGY))
+			if (CurrentEnergy[SYSTEM_MISSILES] < MAX_MISSILE_ENERGY)
 			{
 				float EnergyToSpendOnMissile = EnergyChargeRatePerSecond[SYSTEM_MISSILES] * DeltaTime;
 				if (EnergyToSpendThisTurn >= EnergyToSpendOnMissile)
@@ -244,10 +244,10 @@ void UEnergySystem::UpdateEnergySystem(float DeltaTime, ARobot* robot)
 
 				//Check for extra energy in system. If system is overcharged
 				//return the extra energy to the pool of available energy this turn.
-				if (CurrentEnergy[SYSTEM_MISSILES] > MAX_SHIELD_ENERGY)
+				if (CurrentEnergy[SYSTEM_MISSILES] > MAX_MISSILE_ENERGY)
 				{
-					float ExtraEnergy = CurrentEnergy[SYSTEM_MISSILES] - MAX_SHIELD_ENERGY;
-					CurrentEnergy[SYSTEM_MISSILES] = MAX_SHIELD_ENERGY;
+					float ExtraEnergy = CurrentEnergy[SYSTEM_MISSILES] - MAX_MISSILE_ENERGY;
+					CurrentEnergy[SYSTEM_MISSILES] = MAX_MISSILE_ENERGY;
 					EnergyToSpendThisTurn += ExtraEnergy;
 				}
 			}
@@ -256,6 +256,6 @@ void UEnergySystem::UpdateEnergySystem(float DeltaTime, ARobot* robot)
 			break;
 		}
 	}
-	UE_LOG(LogTemp, Warning, TEXT("---------------------End of Energy distribution---------------------"))
+	//UE_LOG(LogTemp, Warning, TEXT("---------------------End of Energy distribution---------------------"))
 }
 

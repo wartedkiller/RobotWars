@@ -1,6 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "SensorSystem.h"
+#include "Components/StaticMeshComponent.h"
+#include "UObject/ConstructorHelpers.h"
 
 USensorSystem::USensorSystem()
 {
@@ -10,6 +12,21 @@ USensorSystem::USensorSystem()
 	SensorRange = -1;
 	bIsSensorOn = false;
 	bIsEnoughEnergy = false;
+
+	//Creating the UStaticMeshComponent for the Shield and assingning a 2D plane
+	//as it's mesh.
+	TestSensor = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RobotSensor"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> SensorVisualAsset(TEXT("StaticMesh'/Game/Mesh/RadarSensor.RadarSensor'"));
+	if (SensorVisualAsset.Succeeded())
+	{
+		TestSensor->SetStaticMesh(SensorVisualAsset.Object);
+		TestSensor->SetWorldScale3D(FVector(10.0f));
+		TestSensor->SetupAttachment(this);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Could not load plane static mesh for the Sensor"))
+	}
 }
 
 int32 USensorSystem::AddSensor(SENSORTYPE type, int32 angle, int32 width, int32 range)
@@ -30,6 +47,7 @@ int32 USensorSystem::AddSensor(SENSORTYPE type, int32 angle, int32 width, int32 
 		}
 	}
 	SensorWidth = width;
+
 	if (type == SENSOR_RANGE)
 	{
 		if (range > RANGE_MAX_RANGE)

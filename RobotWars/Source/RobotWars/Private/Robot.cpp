@@ -57,7 +57,7 @@ ARobot::ARobot()
 	//as it's mesh.
 	RobotShield = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RobotShield"));
 	RobotShield->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> ShieldVisualAsset(TEXT("/Engine/BasicShapes/Plane"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> ShieldVisualAsset(TEXT("StaticMesh'/Game/Mesh/Shield.Shield'"));
 	if (ShieldVisualAsset.Succeeded())
 	{
 		RobotShield->SetStaticMesh(ShieldVisualAsset.Object);
@@ -78,6 +78,21 @@ ARobot::ARobot()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Could not load the Shield material."))
 	}
+
+	TestSensor = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RobotSensor"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> SensorVisualAsset(TEXT("StaticMesh'/Game/Mesh/RadarSensor.RadarSensor'"));
+	if (SensorVisualAsset.Succeeded())
+	{
+		TestSensor->SetStaticMesh(SensorVisualAsset.Object);
+		TestSensor->SetWorldScale3D(FVector(1.0f));
+		TestSensor->SetupAttachment(RobotDirection);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Could not load plane static mesh for the Sensor"))
+	}
+
+
 
 	//Creating a UMissileSystem so this Robot can Fire Missiles.
 	MissileSystem = CreateDefaultSubobject<UMissileSystem>(TEXT("Missilesystem"));
@@ -125,14 +140,24 @@ void ARobot::BeginPlay()
 	{
 		ShieldMaterial = RobotShield->CreateDynamicMaterialInstance(0, ShieldMaterialHelper);
 		RobotShield->SetMaterial(0, ShieldMaterial);
+
+		SensorMaterial = TestSensor->CreateDynamicMaterialInstance(0, ShieldMaterialHelper);
+		TestSensor->SetMaterial(0, SensorMaterial);
+		TestSensor->SetWorldScale3D(FVector(2.0f));
+		TestSensor->SetWorldRotation(FRotator(0.0f, 90.0f, 0.0f));
+
 		ShieldMaterial->SetVectorParameterValue("ShieldColor", RobotColor);
-		RobotShield->SetWorldScale3D(FVector(0.55f, 0.55f, 0.55f));
+		SensorMaterial->SetVectorParameterValue("ShieldColor", RobotColor);
+		RobotShield->SetWorldScale3D(FVector(1.0f));
 	}
 	
 	//Initialize all Sensor to SENSOR_NONE.
 	for (int32 i = 0; i < MAX_SENSORS; i++)
 	{
 		SensorArray[i] = NewObject<USensorSystem>(this, USensorSystem::StaticClass());
+		SensorArray[i]->RegisterComponent();
+		SensorArray[i]->SetWorldLocation(RobotDirection->GetComponentLocation());
+		SensorArray[i]->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
 	}
 }
 
@@ -324,13 +349,10 @@ void ARobot::UpdateSensor()
 {
 	for (int32 i = 0; i < MAX_SENSORS; i++)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Updating Sensor[%i]"), i)
-		if (SensorArray[i]->GetTypeOfSensor() != SENSOR_NONE || SensorArray[i]->IsEnoughEnergy() || SensorArray[i]->IsSensorOn())
+		if (SensorArray[i]->GetTypeOfSensor() != SENSOR_NONE && SensorArray[i]->IsEnoughEnergy() && SensorArray[i]->IsSensorOn())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Sensor[%i] is updatable"), i)
 			if (SensorArray[i]->GetTypeOfSensor() == SENSOR_RANGE)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Sensor[%i] is a SENSOR_RANGE"), i)
 				int32 SensorAngle = SensorArray[i]->GetSensorAngle();
 
 				FVector PosStart = RobotDirection->GetComponentLocation();
@@ -342,6 +364,10 @@ void ARobot::UpdateSensor()
 				PosEnd = (PosEnd * RANGE_MAX_RANGE) + PosStart;
 				GetWorld()->LineBatcher->DrawLine(PosStart, PosEnd, RobotColor, 1, 2.0f);
 			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Something went wrong with the sensors"))
 		}
 	}
 }
@@ -358,6 +384,8 @@ void ARobot::Tick(float DeltaTime)
 
 	UpdateEnergy(DeltaTime);
 	MoveRobot(DeltaTime);
+
+	GetWorld()->LineBatcher->Flush();
 	UpdateSensor();
 }
 

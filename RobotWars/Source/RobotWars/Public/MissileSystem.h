@@ -29,8 +29,7 @@ public:
 	SYSTEM SystemType = SYSTEM_MISSILES;
 
 private:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
-		//UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Missile", meta = (AllowPrivateAccess = "true"))
 		TSubclassOf<AMissile> MissileToSpawn;
 	
 };

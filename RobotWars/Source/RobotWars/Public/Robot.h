@@ -63,6 +63,8 @@ private:
 
 public:
 	FString RobotName = TEXT("DEFAULT");
+
+	UPROPERTY(VisibleAnywhere, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 	USensorSystem* SensorArray[MAX_SENSORS];
 
 protected:
@@ -82,6 +84,7 @@ private:
 
 	class UMaterial* ShieldMaterialHelper;
 	class UMaterialInstanceDynamic* ShieldMaterial;
+	class UMaterialInstanceDynamic* SensorMaterial;
 	FLinearColor RobotColor;
 
 	//The Robot collision capsule
@@ -103,8 +106,10 @@ private:
 		class USpringArmComponent* SpringArm;
 
 	/* TEST VARIALBE*/
-	TArray<SYSTEM> test;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 		class UMissileSystem* MissileSystem;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sensor", meta = (AllowPrivateAccess = "true"))
+		class UStaticMeshComponent* TestSensor;
 };
