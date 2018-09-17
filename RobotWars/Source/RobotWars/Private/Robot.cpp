@@ -44,8 +44,18 @@ ARobot::ARobot()
 	//NOTE: Paper2D is an abandon ware in Unreal 4. While it will always be
 	//in the Engine, it won't receive future upgrade. A solution to this is
 	//using a 3D plane like it's done for the shield.
-	RobotSprite = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("RobotSprite"));
-	RobotSprite->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
+	RobotMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RobotMesh"));
+	RobotMesh->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> RobotVisualAsset(TEXT("StaticMesh'/Game/Mesh/Robot.Robot'"));
+	if (RobotVisualAsset.Succeeded())
+	{
+		RobotMesh->SetStaticMesh(RobotVisualAsset.Object);
+		RobotMesh->SetWorldLocation(RobotDirection->GetComponentLocation() + FVector(0.0f, 0.0f, -1.0f));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Could not load static mesh for the Robot"))
+	}
 
 	//Creating the UCapsuleComponent used for collision. Since it's a 2D game, the Z position (height)
 	//of the Robots is not important. That's why the Capsule is 200 unit high.
@@ -64,7 +74,7 @@ ARobot::ARobot()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Could not load plane static mesh for the Shield"))
+		UE_LOG(LogTemp, Warning, TEXT("Could not load static mesh for the Shield"))
 	}
 
 	//Loading the Shield material to be used in the BeginPlay() method.
@@ -73,32 +83,40 @@ ARobot::ARobot()
 	{
 
 		ShieldMaterialHelper = ShieldMaterialGetter.Object;
+		RadarSensorMaterialHelper = ShieldMaterialGetter.Object;
 	}
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Could not load the Shield material."))
 	}
 
-	TestSensor = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RobotSensor"));
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> SensorVisualAsset(TEXT("StaticMesh'/Game/Mesh/RadarSensor.RadarSensor'"));
-	if (SensorVisualAsset.Succeeded())
+	static ConstructorHelpers::FObjectFinder<UMaterial> RangeSensorMaterialGetter(TEXT("Material'/Game/Material/ShieldMaterial.ShieldMaterial'"));
+	if (RangeSensorMaterialGetter.Succeeded())
 	{
-		TestSensor->SetStaticMesh(SensorVisualAsset.Object);
-		TestSensor->SetWorldScale3D(FVector(1.0f));
-		TestSensor->SetupAttachment(RobotDirection);
+
+		RangeSensorMaterialHelper = RangeSensorMaterialGetter.Object;
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Could not load plane static mesh for the Sensor"))
+		UE_LOG(LogTemp, Warning, TEXT("Could not load the Shield material."))
 	}
 
-
-
-	//Creating a UMissileSystem so this Robot can Fire Missiles.
-	MissileSystem = CreateDefaultSubobject<UMissileSystem>(TEXT("Missilesystem"));
+	//Creating a UMissileSystem so this Robot can Fire Missiles. Currently trying to solve the problem. See in BeginPlay().
+	//MissileSystem = CreateDefaultSubobject<UMissileSystem>(TEXT("Missilesystem"));
 
 	//Creating the UEnergySystem for the Robot.
 	EnergySystem = CreateDefaultSubobject<UEnergySystem>(TEXT("EnergySystem"));
+
+	//Initializing Sensors
+	SensorMeshArray[0] = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SensorMesh0"));
+	SensorMeshArray[0]->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
+	SensorMeshArray[1] = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SensorMesh1"));
+	SensorMeshArray[1]->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
+	SensorMeshArray[2] = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SensorMesh2"));
+	SensorMeshArray[2]->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
+	SensorMeshArray[3] = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SensorMesh3"));
+	SensorMeshArray[3]->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
+
 
 	//This will be remove and placed in the spectator.
 	///If something is changed to the SpringArm or the CameraComponent, you must restart UE4
@@ -126,13 +144,9 @@ ARobot::ARobot()
 void ARobot::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	//Temporary call of SetRobotColor(). The final color will be set by the GameMode when the game begin.
 	SetRobotColor(FLinearColor::Blue);
-
-	//Shifting the default Robot sprit a little backward so it's centered. This will move and
-	//will make a check if the Player replaced the DefaultRobotSprite.
-	RobotSprite->SetRelativeLocation(FVector(-5, 0, 1));
 
 	//Creating a dynamic material so we can change the color (the opacity in our case) in real time.
 	//Also change the color of the shield and scales it to it's final size.
@@ -141,15 +155,22 @@ void ARobot::BeginPlay()
 		ShieldMaterial = RobotShield->CreateDynamicMaterialInstance(0, ShieldMaterialHelper);
 		RobotShield->SetMaterial(0, ShieldMaterial);
 
-		SensorMaterial = TestSensor->CreateDynamicMaterialInstance(0, ShieldMaterialHelper);
-		TestSensor->SetMaterial(0, SensorMaterial);
-		TestSensor->SetWorldScale3D(FVector(2.0f));
-		TestSensor->SetWorldRotation(FRotator(0.0f, 90.0f, 0.0f));
-
 		ShieldMaterial->SetVectorParameterValue("ShieldColor", RobotColor);
-		SensorMaterial->SetVectorParameterValue("ShieldColor", RobotColor);
 		RobotShield->SetWorldScale3D(FVector(1.0f));
 	}
+
+	if (RadarSensorMaterialHelper)
+	{
+		RadarSensorMaterial = SensorMeshArray[0]->CreateDynamicMaterialInstance(0, RadarSensorMaterialHelper);
+		RadarSensorMaterial->SetVectorParameterValue("ShieldColor", RobotColor);
+	}
+
+	if (RangeSensorMaterialHelper)
+	{
+		RangeSensorMaterial = SensorMeshArray[0]->CreateDynamicMaterialInstance(0, RangeSensorMaterialHelper);
+		RangeSensorMaterial->SetVectorParameterValue("ShieldColor", RobotColor);
+	}
+
 	
 	//Initialize all Sensor to SENSOR_NONE.
 	for (int32 i = 0; i < MAX_SENSORS; i++)
@@ -159,6 +180,9 @@ void ARobot::BeginPlay()
 		SensorArray[i]->SetWorldLocation(RobotDirection->GetComponentLocation());
 		SensorArray[i]->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
 	}
+
+	//This is a test to try and solve the problem with the MissileSystem.
+	MissileSystem = NewObject<UMissileSystem>(this, UMissileSystem::StaticClass());
 }
 
 void ARobot::SetRobotName(FString RobotNewName)
@@ -226,9 +250,25 @@ void ARobot::SetSystemChargeRate(SYSTEM type, int32 rate)
 
 int32 ARobot::AddSensor(int port, SENSORTYPE type, int angle, int width, int range)
 {
-	if (SensorArray[port]->GetTypeOfSensor() == SENSOR_NONE)
+	if (port < MAX_SENSORS)
 	{
-		return SensorArray[port]->AddSensor(type, angle, width, range);
+		if (SensorArray[port]->GetTypeOfSensor() == SENSOR_NONE)
+		{
+			if (type == SENSOR_RADAR)
+			{
+				//TODO Scale the sensor based on the width and range
+				FString MeshPath = TEXT("StaticMesh'/Game/Mesh/RadarSensor.RadarSensor'");
+				SensorMeshArray[port]->SetStaticMesh(Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, *MeshPath)));
+				SensorMeshArray[port]->SetWorldRotation(FRotator(0.0f, 90.0f + angle, 0.0f));
+				SensorMeshArray[port]->SetMaterial(0, RadarSensorMaterial);
+				return SensorArray[port]->AddSensor(type, angle, width, range);
+			}
+			else
+			{
+				//Add RangeSensor Mesh in the port slot
+				return SensorArray[port]->AddSensor(type, angle, width, range);
+			}
+		}
 	}
 	return 0;
 }
@@ -367,7 +407,7 @@ void ARobot::UpdateSensor()
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Something went wrong with the sensors"))
+			//UE_LOG(LogTemp, Warning, TEXT("Something went wrong with the sensors"))
 		}
 	}
 }

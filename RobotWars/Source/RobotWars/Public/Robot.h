@@ -75,7 +75,7 @@ protected:
 
 	//Sprite for the Robot.
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
-		class UPaperSpriteComponent* RobotSprite;
+		class UStaticMeshComponent* RobotMesh;
 
 
 private:
@@ -84,7 +84,10 @@ private:
 
 	class UMaterial* ShieldMaterialHelper;
 	class UMaterialInstanceDynamic* ShieldMaterial;
-	class UMaterialInstanceDynamic* SensorMaterial;
+	class UMaterial* RadarSensorMaterialHelper;
+	class UMaterialInstanceDynamic* RadarSensorMaterial;
+	class UMaterial* RangeSensorMaterialHelper;
+	class UMaterialInstanceDynamic* RangeSensorMaterial;
 	FLinearColor RobotColor;
 
 	//The Robot collision capsule
@@ -97,6 +100,9 @@ private:
 	UPROPERTY()
 		class UEnergySystem* EnergySystem;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
+		class UMissileSystem* MissileSystem;
+
 	//The in Development Camera - Should be remove and put in an observer in final version
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 		class UCameraComponent* CameraComponent;
@@ -105,11 +111,9 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 		class USpringArmComponent* SpringArm;
 
+	UPROPERTY()
+		UStaticMeshComponent* SensorMeshArray[MAX_SENSORS];
+
 	/* TEST VARIALBE*/
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
-		class UMissileSystem* MissileSystem;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sensor", meta = (AllowPrivateAccess = "true"))
-		class UStaticMeshComponent* TestSensor;
 };

@@ -6,32 +6,18 @@
 
 USensorSystem::USensorSystem()
 {
-	MyType = SENSOR_NONE;
+	SensorType = SENSOR_NONE;
 	SensorAngle = -1;
 	SensorWidth = -1;
 	SensorRange = -1;
-	bIsSensorOn = false;
-	bIsEnoughEnergy = false;
-
-	//Creating the UStaticMeshComponent for the Shield and assingning a 2D plane
-	//as it's mesh.
-	TestSensor = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RobotSensor"));
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> SensorVisualAsset(TEXT("StaticMesh'/Game/Mesh/RadarSensor.RadarSensor'"));
-	if (SensorVisualAsset.Succeeded())
-	{
-		TestSensor->SetStaticMesh(SensorVisualAsset.Object);
-		TestSensor->SetWorldScale3D(FVector(10.0f));
-		TestSensor->SetupAttachment(this);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Could not load plane static mesh for the Sensor"))
-	}
+	bSensorOn = false;
+	bEnoughEnergy = false;
+	SensorData = 0;
 }
 
 int32 USensorSystem::AddSensor(SENSORTYPE type, int32 angle, int32 width, int32 range)
 {
-	MyType = type;
+	SensorType = type;
 	
 	SensorAngle = angle % 360;
 	
@@ -67,30 +53,30 @@ int32 USensorSystem::AddSensor(SENSORTYPE type, int32 angle, int32 width, int32 
 		}
 	}
 	SensorRange = range;
-	bIsSensorOn = true;
-	bIsEnoughEnergy = true;
+	bSensorOn = true;
+	bEnoughEnergy = true;
 
 	return 1;
 }
 
 SENSORTYPE USensorSystem::GetTypeOfSensor()
 {
-	return MyType;
+	return SensorType;
 }
 
 void USensorSystem::SetIsEnoughEnergy(bool status)
 {
-	bIsEnoughEnergy = status;
+	bEnoughEnergy = status;
 }
 
 bool USensorSystem::IsEnoughEnergy()
 {
-	return bIsEnoughEnergy;
+	return bEnoughEnergy;
 }
 
 bool USensorSystem::IsSensorOn()
 {
-	return bIsSensorOn;
+	return bSensorOn;
 }
 
 int32 USensorSystem::GetSensorAngle()

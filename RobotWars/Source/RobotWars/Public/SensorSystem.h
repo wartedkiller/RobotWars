@@ -36,14 +36,11 @@ public:
 
 		///********** VARIABLE **************************************************************************************************************************************************
 private:
-	bool bIsSensorOn;
-	bool bIsEnoughEnergy;
-	SENSORTYPE MyType;
+	bool bSensorOn;
+	bool bEnoughEnergy;
+	SENSORTYPE SensorType;
 	int32 SensorAngle;
 	int32 SensorWidth;
 	int32 SensorRange;
-
-public:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sensor", meta = (AllowPrivateAccess = "true"))
-		class UStaticMeshComponent* TestSensor;
+	int32 SensorData;
 };
