@@ -25,8 +25,10 @@ OF WHAT YOU ARE TRYING TO DO.
 ****************************************************/
 ARobot::ARobot()
 {
- 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+ 	// Set this pawn to call Tick() every frame except when the game is paused and before BeginPlay() method is called. 
 	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bTickEvenWhenPaused = false;
+	bAllowTickBeforeBeginPlay = false;
 
 	//Creating a USceneComponent as the RootComponent of the Robot since
 	//USceneComponent are the lightest object that keep track of it's position.
@@ -190,8 +192,19 @@ void ARobot::SetRobotName(FString RobotNewName)
 	RobotName = RobotNewName;
 }
 
+void ARobot::SetStatusMessage(FString Message)
+{
+	//TODO Do SetStatusMessage() method.
+}
+
+float ARobot::GetRandomNumber(int32 UpperBound)
+{
+	//TODO Do GetRandomNumber() method.
+	return 0.0f;
+}
+
 // A method for the Robot to set each thread speed so the Player can set his speed.
-void ARobot::SetTreadSpeed(float LeftThread, float RightThread)
+void ARobot::SetMotorSpeeds(int32 LeftThread, int32 RightThread)
 {
 	if (LeftThread < MIN_THREAH_SPEED)
 	{
@@ -214,6 +227,18 @@ void ARobot::SetTreadSpeed(float LeftThread, float RightThread)
 
 	LeftTreadSpeed = LeftThread;
 	RightTreadSpeed = RightThread;
+}
+
+int32 ARobot::TurboBoost()
+{
+	//TODO TurboBoost() method;
+	return 0;
+}
+
+int32 ARobot::IsTurboOn()
+{
+	//TODO IsTurboOn() method.
+	return 0;
 }
 
 void ARobot::FireMissile()
@@ -252,20 +277,30 @@ int32 ARobot::AddSensor(int port, SENSORTYPE type, int angle, int width, int ran
 {
 	if (port < MAX_SENSORS)
 	{
+		//A temporary check to fake that you can't change your sensor. In the end version, the game state will be chekced
 		if (SensorArray[port]->GetTypeOfSensor() == SENSOR_NONE)
 		{
 			if (type == SENSOR_RADAR)
 			{
 				//TODO Scale the sensor based on the width and range
+				//TODO add a collision casule for the sensor (Bookmarked for cone capsule)
 				FString MeshPath = TEXT("StaticMesh'/Game/Mesh/RadarSensor.RadarSensor'");
 				SensorMeshArray[port]->SetStaticMesh(Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, *MeshPath)));
+				//While doing the RadarSensor mesh, I somehow had it rotated -90 degree so I need to compansate here. This will be changed when the mesh are redone.
 				SensorMeshArray[port]->SetWorldRotation(FRotator(0.0f, 90.0f + angle, 0.0f));
+				//The RadarSensor is scaled to 2x because in the Alegro version of Robotwars, 1 cm = 2 pixel.
+				//For some reason, only the RadarSensor were scale to this mesure. While doing the mesh for the 
+				//RadarSensor, I didn't know that fact.
+				//TODO Redo RadarSensor Mesh with a range of 200 and an half width of 82.8. This give a triangle of 200 unit range (100 range in the game) and an angle of 45 degree. While you're at it make it so you don't need to rotate it 90 degree.
+				SensorMeshArray[port]->SetWorldScale3D(FVector(2.0f));
 				SensorMeshArray[port]->SetMaterial(0, RadarSensorMaterial);
 				return SensorArray[port]->AddSensor(type, angle, width, range);
 			}
 			else
 			{
-				//Add RangeSensor Mesh in the port slot
+				//TODO Add RangeSensor Mesh in the port slot
+				//TODO Scale with range
+				//TODO Add collision capsule.
 				return SensorArray[port]->AddSensor(type, angle, width, range);
 			}
 		}
@@ -273,7 +308,25 @@ int32 ARobot::AddSensor(int port, SENSORTYPE type, int angle, int width, int ran
 	return 0;
 }
 
+int32 ARobot::GetSensorData(int32 port)
+{
+	//TODO Do GetSensorData() method.
+	return int32();
+}
+
+void ARobot::SetSensorStatus(int32 port, int32 status)
+{
+	//TODO Do SetSensorStatus() method.
+}
+
+int32 ARobot::GetGPSInfo(FVector * GPSData)
+{
+	//TODO Do GetGPSInfo() method.
+	return int32();
+}
+
 //TODO The Robot is turning super quickly when one of the thread is negative.
+//TODO Add the Turbo to the movement. Look at Allegro version for an idea how to do it.
 //Might want to slow it down.
 void ARobot::MoveRobot(float DeltaTime)
 {
@@ -393,6 +446,9 @@ void ARobot::UpdateSensor()
 		{
 			if (SensorArray[i]->GetTypeOfSensor() == SENSOR_RANGE)
 			{
+				//TODO Check colision to update PosEnd and collision data.
+
+				//Update the line position of the sensor.
 				int32 SensorAngle = SensorArray[i]->GetSensorAngle();
 
 				FVector PosStart = RobotDirection->GetComponentLocation();
@@ -404,10 +460,10 @@ void ARobot::UpdateSensor()
 				PosEnd = (PosEnd * RANGE_MAX_RANGE) + PosStart;
 				GetWorld()->LineBatcher->DrawLine(PosStart, PosEnd, RobotColor, 1, 2.0f);
 			}
-		}
-		else
-		{
-			//UE_LOG(LogTemp, Warning, TEXT("Something went wrong with the sensors"))
+			else
+			{
+				//TODO Check for SENSOR_RADAR collision and update the collision data.
+			}
 		}
 	}
 }
@@ -447,8 +503,8 @@ void ARobot::GetHit()
 	{
 		if (ShieldMaterial)
 		{
-			FLinearColor CurrentColor = FLinearColor(ShieldMaterial->K2_GetVectorParameterValue("ShieldColor"));
-			ShieldMaterial->SetVectorParameterValue("ShieldColor", FLinearColor(CurrentColor.R, CurrentColor.G, CurrentColor.B, 0.5f));
+			//TODO Change value based on ShieldStrenght
+			ShieldMaterial->SetScalarParameterValue("ShieldTransparency", 0.5f);
 		}
 	}
 

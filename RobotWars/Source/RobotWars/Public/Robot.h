@@ -38,8 +38,16 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	//Other methods
 	void SetRobotName(FString RobotNewName);
-	void SetTreadSpeed(float LeftThread, float RightThread);
+	void SetStatusMessage(FString Message);
+	//void AbortOnError(FString Message);
+	float GetRandomNumber(int32 UpperBound);
+
+	//Movement methods
+	void SetMotorSpeeds(int32 LeftThread, int32 RightThread);
+	int32 TurboBoost();
+	int32 IsTurboOn();
 	
 	//WeaponSystem methods
 	void FireMissile();
@@ -53,6 +61,10 @@ protected:
 
 	//Sensor method
 	int32 AddSensor(int port, SENSORTYPE type, int angle, int width, int range);
+	int32 GetSensorData(int32 port);
+		//status might need to change for a bool.
+	void SetSensorStatus(int32 port, int32 status);
+	int32 GetGPSInfo(FVector* GPSData);
 
 private:
 	void MoveRobot(float DeltaTime);
