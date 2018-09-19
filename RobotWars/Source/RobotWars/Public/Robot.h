@@ -60,7 +60,7 @@ protected:
 	void SetSystemChargeRate(SYSTEM type, int32 rate);
 
 	//Sensor method
-	int32 AddSensor(int port, SENSORTYPE type, int angle, int width, int range);
+	int32 AddSensor(int32 port, SENSORTYPE type, int32 angle, int32 width, int32 range);
 	int32 GetSensorData(int32 port);
 		//status might need to change for a bool.
 	void SetSensorStatus(int32 port, int32 status);
@@ -125,6 +125,9 @@ private:
 
 	UPROPERTY()
 		UStaticMeshComponent* SensorMeshArray[MAX_SENSORS];
+
+	UPROPERTY()
+		UCapsuleComponent* SensorCollisionCapsule[MAX_SENSORS];
 
 	/* TEST VARIALBE*/
 

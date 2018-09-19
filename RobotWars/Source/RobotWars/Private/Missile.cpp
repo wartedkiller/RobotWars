@@ -36,11 +36,6 @@ AMissile::AMissile()
 
 }
 
-void AMissile::SetInitialCondition(FVector InitialPosition, float Direction)
-{
-	MissileDirection->SetWorldRotation(FRotator(0.0f, Direction, 0.0f));
-}
-
 // Called when the game starts or when spawned
 void AMissile::BeginPlay()
 {

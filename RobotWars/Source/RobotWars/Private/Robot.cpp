@@ -106,8 +106,8 @@ ARobot::ARobot()
 	//Creating a UMissileSystem so this Robot can Fire Missiles. Currently trying to solve the problem. See in BeginPlay().
 	//MissileSystem = CreateDefaultSubobject<UMissileSystem>(TEXT("Missilesystem"));
 
-	//Creating the UEnergySystem for the Robot.
-	EnergySystem = CreateDefaultSubobject<UEnergySystem>(TEXT("EnergySystem"));
+	//Creating the UEnergySystem for the Robot. Same as MissileSystem.
+	//EnergySystem = CreateDefaultSubobject<UEnergySystem>(TEXT("EnergySystem"));
 
 	//Initializing Sensors
 	SensorMeshArray[0] = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SensorMesh0"));
@@ -185,6 +185,8 @@ void ARobot::BeginPlay()
 
 	//This is a test to try and solve the problem with the MissileSystem.
 	MissileSystem = NewObject<UMissileSystem>(this, UMissileSystem::StaticClass());
+
+	EnergySystem = NewObject<UEnergySystem>(this, UEnergySystem::StaticClass());
 }
 
 void ARobot::SetRobotName(FString RobotNewName)
@@ -273,8 +275,40 @@ void ARobot::SetSystemChargeRate(SYSTEM type, int32 rate)
 	EnergySystem->SetSystemChargeRate(type, rate);
 }
 
-int32 ARobot::AddSensor(int port, SENSORTYPE type, int angle, int width, int range)
+int32 ARobot::AddSensor(int32 port, SENSORTYPE type, int32 angle, int32 width, int32 range)
 {
+	float TrueWidth = width;
+	float TrueRange = range;
+
+	if (type == SENSOR_RADAR)
+	{
+		if (width < MIN_RADAR_ARC)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Adjusting width : %i"), width)
+			TrueWidth = MIN_RADAR_ARC;
+		}
+		else if (width > MAX_RADAR_ARC)
+		{
+			TrueWidth = MAX_RADAR_ARC;
+		}
+
+		if (range < RADAR_MIN_RANGE)
+		{
+			TrueRange = RADAR_MIN_RANGE;
+		}
+		else if (range > RADAR_MAX_RANGE)
+		{
+			TrueRange = RADAR_MAX_RANGE;
+		}
+	}
+	else if (type == SENSOR_RANGE)
+	{
+		if (range > RANGE_MAX_RANGE)
+		{
+			range = RANGE_MAX_RANGE;
+		}
+	}
+
 	if (port < MAX_SENSORS)
 	{
 		//A temporary check to fake that you can't change your sensor. In the end version, the game state will be chekced
@@ -282,7 +316,6 @@ int32 ARobot::AddSensor(int port, SENSORTYPE type, int angle, int width, int ran
 		{
 			if (type == SENSOR_RADAR)
 			{
-				//TODO Scale the sensor based on the width and range
 				//TODO add a collision casule for the sensor (Bookmarked for cone capsule)
 				FString MeshPath = TEXT("StaticMesh'/Game/Mesh/RadarSensor.RadarSensor'");
 				SensorMeshArray[port]->SetStaticMesh(Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, *MeshPath)));
@@ -291,8 +324,8 @@ int32 ARobot::AddSensor(int port, SENSORTYPE type, int angle, int width, int ran
 				//The RadarSensor is scaled to 2x because in the Alegro version of Robotwars, 1 cm = 2 pixel.
 				//For some reason, only the RadarSensor were scale to this mesure. While doing the mesh for the 
 				//RadarSensor, I didn't know that fact.
-				//TODO Redo RadarSensor Mesh with a range of 200 and an half width of 82.8. This give a triangle of 200 unit range (100 range in the game) and an angle of 45 degree. While you're at it make it so you don't need to rotate it 90 degree.
-				SensorMeshArray[port]->SetWorldScale3D(FVector(2.0f));
+				//TODO Redo RadarSensor Mesh with a range of 200 and an half width of 82.8. This give a triangle of 200 unit range (100 range in the game) and an angle of 45 degree. While you're at it make it so you don't need to rotate it 90 degree and add colision to it.
+				SensorMeshArray[port]->SetWorldScale3D(FVector(2.0f * (TrueWidth / MAX_RADAR_ARC), 2.0f * (TrueRange / RADAR_MAX_RANGE), 1.0f));
 				SensorMeshArray[port]->SetMaterial(0, RadarSensorMaterial);
 				return SensorArray[port]->AddSensor(type, angle, width, range);
 			}

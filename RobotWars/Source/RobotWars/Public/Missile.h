@@ -18,7 +18,6 @@ class ROBOTWARS_API AMissile : public AActor
 public:	
 	// Sets default values for this actor's properties
 	AMissile();
-	void SetInitialCondition(FVector InitialPosition, float Direction);
 
 protected:
 	// Called when the game starts or when spawned
