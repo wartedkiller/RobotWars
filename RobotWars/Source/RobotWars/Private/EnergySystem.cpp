@@ -105,26 +105,6 @@ void UEnergySystem::UpdateEnergySystem(float DeltaTime, ARobot* robot)
 
 	for (SYSTEM CurrentSystem : SystemPriority)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("Energy left to spend this turn = %f"), EnergyToSpendThisTurn)
-
-		//switch (CurrentSystem)
-		//{
-		//case SYSTEM_SHIELDS:
-		//	UE_LOG(LogTemp, Warning, TEXT("CurrentSystem = SYSTEM_SHIELD"))
-		//	break;
-		//case SYSTEM_SENSORS:
-		//	UE_LOG(LogTemp, Warning, TEXT("CurrentSystem = SYSTEM_SENSORS"))
-		//		break;
-		//case SYSTEM_LASERS:
-		//	UE_LOG(LogTemp, Warning, TEXT("CurrentSystem = SYSTEM_LASERS"))
-		//		break;
-		//case SYSTEM_MISSILES:
-		//	UE_LOG(LogTemp, Warning, TEXT("CurrentSystem = SYSTEM_MISSILES"))
-		//		break;
-		//default:
-		//	break;
-		//}
-
 		//Stop giving energy if there is no energy to give.
 		if (EnergyToSpendThisTurn == 0)
 		{
@@ -141,7 +121,6 @@ void UEnergySystem::UpdateEnergySystem(float DeltaTime, ARobot* robot)
 				float EnergyToSpendOnShield = EnergyChargeRatePerSecond[SYSTEM_SHIELDS] * DeltaTime;
 				if (EnergyToSpendThisTurn >= EnergyToSpendOnShield)
 				{
-					//UE_LOG(LogTemp, Warning, TEXT("EnergyToSpendThisTurn = %f    EnergyChargeRatePerSecond[SYSTEM_SHIELDS] = %f"), EnergyToSpendThisTurn, EnergyToSpendOnShield)
 					EnergyToSpendThisTurn -= EnergyToSpendOnShield;
 					CurrentEnergy[SYSTEM_SHIELDS] += EnergyToSpendOnShield;
 				}
@@ -149,7 +128,6 @@ void UEnergySystem::UpdateEnergySystem(float DeltaTime, ARobot* robot)
 				{
 					CurrentEnergy[SYSTEM_SHIELDS] += EnergyToSpendThisTurn;
 					EnergyToSpendThisTurn = 0;
-					//UE_LOG(LogTemp, Warning, TEXT("Energy spent on shield this turn = %f"), EnergyToSpendThisTurn)
 				}
 
 				//Check for extra energy in system. If system is overcharged
@@ -256,6 +234,5 @@ void UEnergySystem::UpdateEnergySystem(float DeltaTime, ARobot* robot)
 			break;
 		}
 	}
-	//UE_LOG(LogTemp, Warning, TEXT("---------------------End of Energy distribution---------------------"))
 }
 

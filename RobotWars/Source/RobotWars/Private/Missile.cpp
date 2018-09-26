@@ -84,7 +84,6 @@ void AMissile::Tick(float DeltaTime)
 		{
 			//Set Missile new location
 			SetActorLocation(DesiredEndLocation);
-			
 		}
 	}
 }

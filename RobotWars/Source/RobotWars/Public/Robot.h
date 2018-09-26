@@ -71,6 +71,11 @@ private:
 	void UpdateSensor();
 	void UpdateEnergy(float DeltaTime);
 
+	UFUNCTION()
+		void RadarOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+	UFUNCTION()
+		void RadarOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
 ///********** VARIABLE **************************************************************************************************************************************************
 
 public:
@@ -123,12 +128,11 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 		class USpringArmComponent* SpringArm;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 		UStaticMeshComponent* SensorMeshArray[MAX_SENSORS];
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 		UCapsuleComponent* SensorCollisionCapsule[MAX_SENSORS];
 
 	/* TEST VARIALBE*/
-
 };

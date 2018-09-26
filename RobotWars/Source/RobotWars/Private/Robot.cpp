@@ -319,13 +319,11 @@ int32 ARobot::AddSensor(int32 port, SENSORTYPE type, int32 angle, int32 width, i
 				//TODO add a collision casule for the sensor (Bookmarked for cone capsule)
 				FString MeshPath = TEXT("StaticMesh'/Game/Mesh/RadarSensor.RadarSensor'");
 				SensorMeshArray[port]->SetStaticMesh(Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, *MeshPath)));
-				//While doing the RadarSensor mesh, I somehow had it rotated -90 degree so I need to compansate here. This will be changed when the mesh are redone.
-				SensorMeshArray[port]->SetWorldRotation(FRotator(0.0f, 90.0f + angle, 0.0f));
-				//The RadarSensor is scaled to 2x because in the Alegro version of Robotwars, 1 cm = 2 pixel.
-				//For some reason, only the RadarSensor were scale to this mesure. While doing the mesh for the 
-				//RadarSensor, I didn't know that fact.
-				//TODO Redo RadarSensor Mesh with a range of 200 and an half width of 82.8. This give a triangle of 200 unit range (100 range in the game) and an angle of 45 degree. While you're at it make it so you don't need to rotate it 90 degree and add colision to it.
-				SensorMeshArray[port]->SetWorldScale3D(FVector(2.0f * (TrueWidth / MAX_RADAR_ARC), 2.0f * (TrueRange / RADAR_MAX_RANGE), 1.0f));
+				SensorMeshArray[port]->SetWorldRotation(FRotator(0.0f, angle, 0.0f));
+				SensorMeshArray[port]->SetWorldScale3D(FVector(TrueRange / RADAR_MAX_RANGE, TrueWidth / MAX_RADAR_ARC, 1.0f));
+				SensorMeshArray[port]->SetCollisionProfileName(TEXT("RadarSensor"));
+				SensorMeshArray[port]->OnComponentBeginOverlap.AddDynamic(this, &ARobot::RadarOverlap);
+				SensorMeshArray[port]->OnComponentEndOverlap.AddDynamic(this, &ARobot::RadarOverlapEnd);
 				SensorMeshArray[port]->SetMaterial(0, RadarSensorMaterial);
 				return SensorArray[port]->AddSensor(type, angle, width, range);
 			}
@@ -496,6 +494,7 @@ void ARobot::UpdateSensor()
 			else
 			{
 				//TODO Check for SENSOR_RADAR collision and update the collision data.
+
 			}
 		}
 	}
@@ -504,6 +503,15 @@ void ARobot::UpdateSensor()
 void ARobot::UpdateEnergy(float DeltaTime)
 {
 	EnergySystem->UpdateEnergySystem(DeltaTime, this);
+}
+
+void ARobot::RadarOverlap(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Radar being overlap"))
+}
+
+void ARobot::RadarOverlapEnd(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex)
+{
 }
 
 // Called every frame
@@ -548,4 +556,3 @@ USensorSystem* ARobot::GetSensor(int index)
 {
 	return SensorArray[index];
 }
-
