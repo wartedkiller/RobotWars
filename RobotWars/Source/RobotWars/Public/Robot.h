@@ -64,7 +64,7 @@ protected:
 	int32 GetSensorData(int32 port);
 		//status might need to change for a bool.
 	void SetSensorStatus(int32 port, int32 status);
-	int32 GetGPSInfo(FVector* GPSData);
+	GPS_INFO GetGPSInfo();
 
 private:
 	void MoveRobot(float DeltaTime);
@@ -73,8 +73,10 @@ private:
 
 	UFUNCTION()
 		void RadarOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+
 	UFUNCTION()
 		void RadarOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
 
 ///********** VARIABLE **************************************************************************************************************************************************
 

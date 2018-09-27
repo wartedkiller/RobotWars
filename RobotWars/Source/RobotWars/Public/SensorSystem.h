@@ -28,11 +28,14 @@ public:
 	int32 AddSensor(SENSORTYPE type, int32 angle, int32 width, int32 range);
 	SENSORTYPE GetTypeOfSensor();
 	void SetIsEnoughEnergy(bool status);
+	void SetSensorData(int32 data);
+	void SetSensorStatus(bool status);
 	bool IsEnoughEnergy();
 	bool IsSensorOn();
 	int32 GetSensorAngle();
 	int32 GetSensorWidth();
 	int32 GetSensorRange();
+	int32 GetSensorData();
 
 		///********** VARIABLE **************************************************************************************************************************************************
 private:

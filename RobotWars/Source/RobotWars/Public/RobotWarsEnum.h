@@ -18,6 +18,12 @@ typedef enum {
 	SENSOR_NONE
 } SENSORTYPE;
 
+typedef struct {
+	float x;
+	float y;
+	float heading;
+} GPS_INFO;
+
 /**
  * 
  */

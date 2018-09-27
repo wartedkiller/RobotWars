@@ -16,6 +16,7 @@
 #include "MissileSystem.h"
 #include "EnergySystem.h"
 #include "SensorSystem.h"
+#include "DrawDebugHelpers.h"
 
 /****************************************************
 IF ANYTHING CHANGE IN THE CONSTRUCTOR OF THIS CLASS,
@@ -284,7 +285,6 @@ int32 ARobot::AddSensor(int32 port, SENSORTYPE type, int32 angle, int32 width, i
 	{
 		if (width < MIN_RADAR_ARC)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Adjusting width : %i"), width)
 			TrueWidth = MIN_RADAR_ARC;
 		}
 		else if (width > MAX_RADAR_ARC)
@@ -316,7 +316,6 @@ int32 ARobot::AddSensor(int32 port, SENSORTYPE type, int32 angle, int32 width, i
 		{
 			if (type == SENSOR_RADAR)
 			{
-				//TODO add a collision casule for the sensor (Bookmarked for cone capsule)
 				FString MeshPath = TEXT("StaticMesh'/Game/Mesh/RadarSensor.RadarSensor'");
 				SensorMeshArray[port]->SetStaticMesh(Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, *MeshPath)));
 				SensorMeshArray[port]->SetWorldRotation(FRotator(0.0f, angle, 0.0f));
@@ -325,14 +324,18 @@ int32 ARobot::AddSensor(int32 port, SENSORTYPE type, int32 angle, int32 width, i
 				SensorMeshArray[port]->OnComponentBeginOverlap.AddDynamic(this, &ARobot::RadarOverlap);
 				SensorMeshArray[port]->OnComponentEndOverlap.AddDynamic(this, &ARobot::RadarOverlapEnd);
 				SensorMeshArray[port]->SetMaterial(0, RadarSensorMaterial);
-				return SensorArray[port]->AddSensor(type, angle, width, range);
+				return SensorArray[port]->AddSensor(type, angle, TrueWidth, TrueRange);
 			}
 			else
 			{
 				//TODO Add RangeSensor Mesh in the port slot
 				//TODO Scale with range
 				//TODO Add collision capsule.
-				return SensorArray[port]->AddSensor(type, angle, width, range);
+				FString MeshPath = TEXT("StaticMesh'/Game/Mesh/RangeSensor_Circle.RangeSensor_Circle'");
+				SensorMeshArray[port]->SetStaticMesh(Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, *MeshPath)));
+				SensorMeshArray[port]->SetWorldScale3D(FVector(2.0f));
+				SensorMeshArray[port]->SetMaterial(0, RangeSensorMaterial);
+				return SensorArray[port]->AddSensor(type, angle, TrueWidth, TrueRange);
 			}
 		}
 	}
@@ -341,19 +344,35 @@ int32 ARobot::AddSensor(int32 port, SENSORTYPE type, int32 angle, int32 width, i
 
 int32 ARobot::GetSensorData(int32 port)
 {
-	//TODO Do GetSensorData() method.
-	return int32();
+	if (SensorArray[port])
+	{
+		return SensorArray[port]->GetSensorData();
+	}
+	else
+	{
+		return -1;
+	}
 }
 
 void ARobot::SetSensorStatus(int32 port, int32 status)
 {
-	//TODO Do SetSensorStatus() method.
+	if (SensorArray[port])
+	{
+		SensorArray[port]->SetSensorStatus(status);
+	}
 }
 
-int32 ARobot::GetGPSInfo(FVector * GPSData)
+GPS_INFO ARobot::GetGPSInfo()
 {
-	//TODO Do GetGPSInfo() method.
-	return int32();
+	//TODO Remove Energy for the GPS call.
+	FVector temp = GetActorLocation();
+	GPS_INFO GPSInfo;
+
+	GPSInfo.x = temp.X;
+	GPSInfo.y = temp.Y;
+	GPSInfo.heading = GetActorRotation().Yaw;
+
+	return GPSInfo;
 }
 
 //TODO The Robot is turning super quickly when one of the thread is negative.
@@ -371,8 +390,6 @@ void ARobot::MoveRobot(float DeltaTime)
 	//The direction (positive or negative) has been accounted for in the math.
 	float DistanceLeftTread = (FMath::Abs(LeftTreadSpeed) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
 	float DistanceRightTread = (FMath::Abs(RightTreadSpeed) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
-	/*float DistanceLeftTread = (LeftTreadSpeed / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
-	float DistanceRightTread = (RightTreadSpeed / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;*/
 
 	//Case 1 : The Robot is moving without turning.
 	//There is no math for this case since it's trivial.
@@ -483,18 +500,45 @@ void ARobot::UpdateSensor()
 				int32 SensorAngle = SensorArray[i]->GetSensorAngle();
 
 				FVector PosStart = RobotDirection->GetComponentLocation();
-				FVector PosEnd = RobotDirection->GetForwardVector();
+				FVector PosEnd = PosStart + RobotDirection->GetComponentRotation().Vector() * SensorArray[i]->GetSensorRange();
 
-				PosEnd.X = FMath::Cos(FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw + SensorAngle));
-				PosEnd.Y = FMath::Sin(FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw + SensorAngle));
+				if (UWorld* World = GetWorld())
+				{
+					TArray<FHitResult> OutHit;
 
-				PosEnd = (PosEnd * RANGE_MAX_RANGE) + PosStart;
+					FCollisionShape CollisionShape;
+					CollisionShape.SetCapsule(5.0f, 200.0f);
+
+					//Since it can hit multiple AActor, I made the decision to stop after the first hit that is not itself.
+					//Weirdly enough, I need to use the Projectile:Fly collision profile even though the RangeSensor is identical. This means RangeSensor can detect missile and laser. (For now)
+					//TODO Change the collision to only hit the Robot.
+					if (World->SweepMultiByProfile(OutHit, PosStart, PosEnd, FQuat(FRotator(0.0f, SensorArray[i]->GetSensorAngle(), 0.0f)), TEXT("Projectile:Fly"), CollisionShape))
+					{
+						for (int32 CurrentCollision = 0; CurrentCollision < OutHit.Num(); CurrentCollision++)
+						{
+							AActor* OtherActor = OutHit[CurrentCollision].GetActor();
+								if (ARobot* temp = Cast<ARobot>(OtherActor))
+								{
+									if (OtherActor->GetName().Compare(this->GetName()) != 0)
+									{
+										UE_LOG(LogTemp, Warning, TEXT("RangeSensor is colliding with : %s"), *OtherActor->GetName())
+										PosEnd = OutHit[CurrentCollision].Location;
+										break;
+									}
+
+								}
+						}
+
+					}
+					//else
+					//{
+					//	//Set Missile new location
+					//	SetActorLocation(DesiredEndLocation);
+					//}
+				}
+
 				GetWorld()->LineBatcher->DrawLine(PosStart, PosEnd, RobotColor, 1, 2.0f);
-			}
-			else
-			{
-				//TODO Check for SENSOR_RADAR collision and update the collision data.
-
+				SensorMeshArray[i]->SetWorldLocation(PosEnd);
 			}
 		}
 	}
@@ -507,11 +551,15 @@ void ARobot::UpdateEnergy(float DeltaTime)
 
 void ARobot::RadarOverlap(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Radar being overlap"))
+
+	if (ARobot* temp = Cast<ARobot>(OtherActor)) {
+		//TODO Set RadarSensor data to 1;
+	}
 }
 
 void ARobot::RadarOverlapEnd(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex)
 {
+	//TODO Set RadarSensor data to 0;
 }
 
 // Called every frame

@@ -20,7 +20,6 @@ int32 USensorSystem::AddSensor(SENSORTYPE type, int32 angle, int32 width, int32 
 	SensorType = type;
 	
 	SensorAngle = angle % 360;
-
 	SensorWidth = width;
 	SensorRange = range;
 	bSensorOn = true;
@@ -37,6 +36,16 @@ SENSORTYPE USensorSystem::GetTypeOfSensor()
 void USensorSystem::SetIsEnoughEnergy(bool status)
 {
 	bEnoughEnergy = status;
+}
+
+void USensorSystem::SetSensorData(int32 data)
+{
+	SensorData = data;
+}
+
+void USensorSystem::SetSensorStatus(bool status)
+{
+	bSensorOn = status;
 }
 
 bool USensorSystem::IsEnoughEnergy()
@@ -62,4 +71,9 @@ int32 USensorSystem::GetSensorWidth()
 int32 USensorSystem::GetSensorRange()
 {
 	return SensorRange;
+}
+
+int32 USensorSystem::GetSensorData()
+{
+	return SensorData;
 }
