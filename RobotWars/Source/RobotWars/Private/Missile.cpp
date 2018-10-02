@@ -57,27 +57,31 @@ void AMissile::Tick(float DeltaTime)
 	//Check for collision
 	if (UWorld* World = GetWorld())
 	{
-		FHitResult OutHit;
+		TArray<FHitResult> OutHit;
 		FCollisionShape CollisionShape;
 		CollisionShape.SetCapsule(Radius, 200.0f);
 
 		//If the missile collide, handle the collision based on what it hit
 		//Else move the missile forward
-		if (World->SweepSingleByProfile(OutHit, CurrentLocation, DesiredEndLocation, FQuat::Identity, MovementCollisionProfile, CollisionShape))
+		if (World->SweepMultiByProfile(OutHit, CurrentLocation, DesiredEndLocation, FQuat::Identity, MovementCollisionProfile, CollisionShape))
 		{
-			if (OutHit.GetActor()->GetName().Compare(this->GetOwner()->GetName()) == 0 || OutHit.GetActor()->GetName().Compare(this->GetName()) == 0)
+			for (int32 CurrentCollision = 0; CurrentCollision < OutHit.Num(); CurrentCollision++)
 			{
-				SetActorLocation(DesiredEndLocation);
-			}
-			else
-			{
-				SetActorLocation(OutHit.Location);
-
-				if (ARobot* HitRobot = Cast<ARobot>(OutHit.GetActor()))
+				if (OutHit[CurrentCollision].GetActor()->GetName().Compare(this->GetOwner()->GetName()) == 0 || OutHit[CurrentCollision].GetActor()->GetName().Compare(this->GetName()) == 0)
 				{
-					HitRobot->GetHit();
-					Explode();
-				}				
+					SetActorLocation(DesiredEndLocation);
+				}
+				else
+				{
+					SetActorLocation(OutHit[CurrentCollision].Location);
+
+					if (ARobot* HitRobot = Cast<ARobot>(OutHit[CurrentCollision].GetActor()))
+					{
+						HitRobot->GetHit();
+						Explode();
+						break;
+					}
+				}
 			}
 		}
 		else

@@ -7,12 +7,16 @@
 #include "Missile.h"
 #include "RobotWarsEnum.h"
 #include "SensorSystem.h"
+#include "TimerManager.h"
 #include "Robot.generated.h"
 
-#define MAX_TREAD_SPEED 100.0f
-#define MIN_THREAH_SPEED -100.0f
-#define MAX_SPEED 100.0f				//In cm/s
-#define TREAD_DISTANCE 15.0f
+#define MAX_TREAD_SPEED		100.0f
+#define MIN_THREAH_SPEED	-100.0f
+#define MAX_SPEED			100.0f				//In cm/s
+#define TREAD_DISTANCE		15.0f
+#define TURBO_ENERGY_COST	100
+#define TURBO_TIME			3.0f
+
 
 UCLASS()
 class ROBOTWARS_API ARobot : public APawn
@@ -40,7 +44,7 @@ protected:
 
 	//Other methods
 	void SetRobotName(FString RobotNewName);
-	void SetStatusMessage(FString Message);
+	void SetStatusMessage(char* Message);
 	//void AbortOnError(FString Message);
 	float GetRandomNumber(int32 UpperBound);
 
@@ -50,7 +54,7 @@ protected:
 	int32 IsTurboOn();
 	
 	//WeaponSystem methods
-	void FireMissile();
+	void FireWeapon(WEAPONTYPE type, int32 heading);
 
 	//EnergySystem methods
 	int32 GetGeneratorStructur();
@@ -72,6 +76,9 @@ private:
 	void UpdateEnergy(float DeltaTime);
 
 	UFUNCTION()
+	void TurnBoosOff();
+
+	UFUNCTION()
 		void RadarOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
 
 	UFUNCTION()
@@ -82,6 +89,7 @@ private:
 
 public:
 	FString RobotName = TEXT("DEFAULT");
+	FString StatusMessage = TEXT("NO STATUS MESSAGE");
 
 	UPROPERTY(VisibleAnywhere, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 	USensorSystem* SensorArray[MAX_SENSORS];
@@ -100,6 +108,9 @@ protected:
 private:
 	int32 LeftTreadSpeed = 0;
 	int32 RightTreadSpeed = 0;
+	int32 TurboOn = 0;
+
+	FTimerHandle TurboTimerHandle;
 
 	class UMaterial* ShieldMaterialHelper;
 	class UMaterialInstanceDynamic* ShieldMaterial;

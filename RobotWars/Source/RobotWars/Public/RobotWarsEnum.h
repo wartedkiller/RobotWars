@@ -24,6 +24,12 @@ typedef struct {
 	float heading;
 } GPS_INFO;
 
+typedef enum {
+	WEAPON_MISSILE,
+	WEAPON_LASER,
+	WEAPON_NONE
+} WEAPONTYPE;
+
 /**
  * 
  */

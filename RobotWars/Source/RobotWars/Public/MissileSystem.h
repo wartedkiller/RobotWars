@@ -8,6 +8,8 @@
 #include "RobotWarsEnum.h"
 #include "MissileSystem.generated.h"
 
+#define MISSILE_MAX_ANGLE	90
+
 /**
  * 
  */

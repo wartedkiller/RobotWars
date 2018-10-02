@@ -13,10 +13,10 @@ OF WHAT YOU ARE TRYING TO DO.
 ****************************************************/
 UMissileSystem::UMissileSystem()
 {
-	static ConstructorHelpers::FObjectFinder<UBlueprint> MissileBP(TEXT("Blueprint'/Game/Blueprint/Missile_BP.Missile_BP'"));
+	static ConstructorHelpers::FObjectFinder<UClass> MissileBP(TEXT("Class'/Game/Blueprint/Missile_BP.Missile_BP_C'"));
 	if (MissileBP.Succeeded())
 	{
-		MissileToSpawn = MissileBP.Object->GeneratedClass;
+		MissileToSpawn = MissileBP.Object;
 	}
 	else
 	{
