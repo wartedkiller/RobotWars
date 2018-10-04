@@ -375,6 +375,13 @@ void ARobot::SetSensorStatus(int32 port, int32 status)
 	}
 }
 
+int32 ARobot::GetBumpInfo()
+{
+	int32 temp = BumpInfo;
+	BumpInfo = 0;
+	return temp;
+}
+
 GPS_INFO ARobot::GetGPSInfo()
 {
 	//TODO Remove Energy for the GPS call.
@@ -389,8 +396,8 @@ GPS_INFO ARobot::GetGPSInfo()
 }
 
 //TODO The Robot is turning super quickly when one of the thread is negative.
-//TODO Add the Turbo to the movement. Look at Allegro version for an idea how to do it.
 //Might want to slow it down.
+//TODO Robot-Robot collision.
 void ARobot::MoveRobot(float DeltaTime)
 {
 	//Initializing initial variable so they can be used even if they don't change.
@@ -399,10 +406,21 @@ void ARobot::MoveRobot(float DeltaTime)
 	float FuturHeading = FMath::DegreesToRadians(RobotDirection->GetComponentRotation().Yaw);
 	FVector FuturPosition = GetActorLocation();
 
+	float DistanceLeftTread = 0.0f;
+	float DistanceRightTread = 0.0f;
+
 	//This is the lenght of the movement vector.
 	//The direction (positive or negative) has been accounted for in the math.
-	float DistanceLeftTread = (FMath::Abs(LeftTreadSpeed) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
-	float DistanceRightTread = (FMath::Abs(RightTreadSpeed) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
+	if (TurboOn)
+	{
+		DistanceLeftTread = ((FMath::Abs(LeftTreadSpeed) + TURBO_SPEED) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
+		DistanceRightTread = ((FMath::Abs(RightTreadSpeed) + TURBO_SPEED) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
+	}
+	else
+	{
+		DistanceLeftTread = (FMath::Abs(LeftTreadSpeed) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
+		DistanceRightTread = (FMath::Abs(RightTreadSpeed) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
+	}
 
 	//Case 1 : The Robot is moving without turning.
 	//There is no math for this case since it's trivial.
@@ -499,6 +517,7 @@ void ARobot::MoveRobot(float DeltaTime)
 	SetActorLocation(FuturPosition);
 }
 
+//TODO turn Sensor off if not enough energy or if player turn them off
 void ARobot::UpdateSensor()
 {
 	for (int32 i = 0; i < MAX_SENSORS; i++)
@@ -554,6 +573,20 @@ void ARobot::UpdateSensor()
 void ARobot::UpdateEnergy(float DeltaTime)
 {
 	EnergySystem->UpdateEnergySystem(DeltaTime, this);
+	UpdateShield();
+}
+
+
+//TODO Test shield transparency value. 0.8f seems a little bit too much.
+void ARobot::UpdateShield()
+{
+	if (RobotShield)
+	{
+		if (ShieldMaterial)
+		{
+			ShieldMaterial->SetScalarParameterValue("ShieldTransparency", EnergySystem->GetSystemEnergy(SYSTEM_SHIELDS) / MAX_SHIELD_ENERGY * 0.8f);
+		}
+	}
 }
 
 void ARobot::TurnBoosOff()
@@ -570,18 +603,22 @@ void ARobot::RadarOverlap(UPrimitiveComponent * OverlappedComponent, AActor * Ot
 		{
 			if (SensorArray[i]->GetTypeOfSensor() == SENSOR_RADAR)
 			{
-				//When it find the right Sensor, set the sensor value to 1.
+				//Find the right Sensor.
 				if (Cast<UStaticMeshComponent>(OverlappedComponent) == SensorMeshArray[i])
 				{
-					//MAGIC NUMBER ALERT! Right now Radar Sensor can only detect Robot but in a futur iteration it might want to detect missiles or other new weapon.
-					SensorArray[i]->SetSensorData(1);
+					//Check if the Sensor is already set to 1.
+					if (SensorArray[i]->GetSensorData() != 1)
+					{
+						//MAGIC NUMBER ALERT! Right now Radar Sensor can only detect Robot but in a futur iteration it might want to detect missiles or other new weapon.
+						SensorArray[i]->SetSensorData(1);
+						UE_LOG(LogTemp, Warning, TEXT("Sensor data is Set to 1"))
+					}
 				}
 			}
 		}
 	}
 }
 
-//TODO Check if there is nothing else overlapping before SetSensorData(0).
 void ARobot::RadarOverlapEnd(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex)
 {
 	//Iterate through all Sensor to find the overlapping Sensor
@@ -589,9 +626,34 @@ void ARobot::RadarOverlapEnd(UPrimitiveComponent * OverlappedComponent, AActor *
 	{
 		if (SensorArray[i]->GetTypeOfSensor() == SENSOR_RADAR)
 		{
-			//When it find the right Sensor, set the sensor value to 1.
+			//When it find the right Sensor, check if it's the right Sensor.
 			if (Cast<UStaticMeshComponent>(OverlappedComponent) == SensorMeshArray[i])
 			{
+				TArray<AActor*> OverlappingActors;
+				OverlappedComponent->GetOverlappingActors(OverlappingActors);
+				
+				//Get all the Actor overlapping the RadarSensor
+				for (int32 CurrentOverlappingActor = 0; CurrentOverlappingActor < OverlappingActors.Num(); CurrentOverlappingActor++)
+				{
+					//Excluding the owner of the RadarSensor
+					if (OverlappingActors[CurrentOverlappingActor] != this)
+					{
+						TArray<UPrimitiveComponent*> OverlappingComponents;
+						OverlappedComponent->GetOverlappingComponents(OverlappingComponents);
+
+						//GEtting all the Component overlapping the RadarSensor
+						for (int32 CurrentOverlappingComponent = 0; CurrentOverlappingComponent < OverlappingComponents.Num(); CurrentOverlappingComponent++)
+						{
+							UCapsuleComponent* temp = Cast<UCapsuleComponent>(OverlappingComponents[CurrentOverlappingComponent]);
+
+							//If the Component overlapping is a UCapsuleComponent then a Rabot is in the RadarSensor since Robot are the only Actor using UCapsuleComponent
+							if (temp)
+							{
+								return;
+							}
+						}
+					}
+				}
 				//MAGIC NUMBER ALERT! Nothing overlaping.
 				SensorArray[i]->SetSensorData(0);
 			}
@@ -606,9 +668,8 @@ void ARobot::Tick(float DeltaTime)
 
 	UpdateEnergy(DeltaTime);
 	MoveRobot(DeltaTime);
-
-	GetWorld()->LineBatcher->Flush();
 	UpdateSensor();
+
 }
 
 // Called to bind functionality to input
@@ -623,16 +684,33 @@ void ARobot::SetRobotColor(FLinearColor color)
 	RobotColor = color;
 }
 
-void ARobot::GetHit()
+
+void ARobot::GetHit(DAMAGETYPE DamageType, int32 DamageValue)
 {
-	if (RobotShield)
+	switch (DamageType)
 	{
-		if (ShieldMaterial)
-		{
-			//TODO Change value based on ShieldStrenght
-			ShieldMaterial->SetScalarParameterValue("ShieldTransparency", 0.5f);
-		}
+	case MISSILE:
+		BumpInfo |= BUMP_MISSILE;
+		break;
+	case LASER:
+		BumpInfo |= BUMP_LASER;
+		break;
+	case ROBOT:
+		BumpInfo |= BUMP_ROBOT;
+		break;
+	case WALL:
+		BumpInfo |= BUMP_WALL;
+		break;
+	default:
+		break;
 	}
+
+	if (!EnergySystem->RemoveEnergy(DamageValue))
+	{
+		//TODO Destroy the robot.
+		return;
+	}
+	UpdateShield();
 
 	UE_LOG(LogTemp, Warning, TEXT("%s got hit"), *GetName())
 }

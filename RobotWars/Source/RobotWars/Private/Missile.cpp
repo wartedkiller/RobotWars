@@ -77,7 +77,7 @@ void AMissile::Tick(float DeltaTime)
 
 					if (ARobot* HitRobot = Cast<ARobot>(OutHit[CurrentCollision].GetActor()))
 					{
-						HitRobot->GetHit();
+						HitRobot->GetHit(MISSILE, MISSILE_DAMAGE);
 						Explode();
 						break;
 					}
@@ -92,6 +92,7 @@ void AMissile::Tick(float DeltaTime)
 	}
 }
 
+//TODO Add damage based on distance of the explosion.
 void AMissile::Explode()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Insert Missile Explosion Here"))

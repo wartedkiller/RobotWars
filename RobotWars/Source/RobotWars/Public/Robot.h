@@ -16,6 +16,7 @@
 #define TREAD_DISTANCE		15.0f
 #define TURBO_ENERGY_COST	100
 #define TURBO_TIME			3.0f
+#define TURBO_SPEED			200
 
 
 UCLASS()
@@ -35,7 +36,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	void SetRobotColor(FLinearColor color);
-	void GetHit();
+	void GetHit(DAMAGETYPE DamageType, int32 DamageValue);
 	USensorSystem* GetSensor(int index);
 
 protected:
@@ -68,12 +69,14 @@ protected:
 	int32 GetSensorData(int32 port);
 		//status might need to change for a bool.
 	void SetSensorStatus(int32 port, int32 status);
+	int32 GetBumpInfo();
 	GPS_INFO GetGPSInfo();
 
 private:
 	void MoveRobot(float DeltaTime);
 	void UpdateSensor();
 	void UpdateEnergy(float DeltaTime);
+	void UpdateShield();
 
 	UFUNCTION()
 	void TurnBoosOff();
@@ -109,6 +112,7 @@ private:
 	int32 LeftTreadSpeed = 0;
 	int32 RightTreadSpeed = 0;
 	int32 TurboOn = 0;
+	int32 BumpInfo = 0;
 
 	FTimerHandle TurboTimerHandle;
 

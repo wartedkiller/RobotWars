@@ -96,7 +96,6 @@ void UEnergySystem::SetSystemChargeRate(SYSTEM type, int32 rate)
 }
 
 
-//TODO Update Shield and Sensor based on Energy. Probably be done in the robot.
 void UEnergySystem::UpdateEnergySystem(float DeltaTime, ARobot* robot)
 {
 	TArray<SYSTEM> temp = SystemPriority;
@@ -234,5 +233,26 @@ void UEnergySystem::UpdateEnergySystem(float DeltaTime, ARobot* robot)
 			break;
 		}
 	}
+}
+
+bool UEnergySystem::RemoveEnergy(int32 Value)
+{
+	if (CurrentEnergy[SYSTEM_SHIELDS] >= Value)
+	{
+		CurrentEnergy[SYSTEM_SHIELDS] -= Value;
+	}
+	else
+	{
+		Value -= CurrentEnergy[SYSTEM_SHIELDS];
+		CurrentEnergy[SYSTEM_SHIELDS] = 0;
+		CurrentGeneratorStructure -= Value;
+
+		if (CurrentGeneratorStructure <= 0)
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 

@@ -7,7 +7,8 @@
 #include "GameFramework/Actor.h"
 #include "Missile.generated.h"
 
-#define MISSILE_SPEED 150.0f
+#define MISSILE_SPEED	150.0f
+#define MISSILE_DAMAGE	150
 
 UCLASS()
 class ROBOTWARS_API AMissile : public AActor

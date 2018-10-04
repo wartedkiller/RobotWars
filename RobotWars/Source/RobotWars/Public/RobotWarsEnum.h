@@ -6,6 +6,10 @@
 
 #define MAX_SENSORS			4
 #define NUM_ENERGY_SYSTEMS	4
+#define BUMP_WALL			0x01
+#define BUMP_ROBOT			0x02
+#define BUMP_MISSILE		0x04
+#define BUMP_LASER			0x08
 
 typedef enum
 {
@@ -18,17 +22,24 @@ typedef enum {
 	SENSOR_NONE
 } SENSORTYPE;
 
-typedef struct {
-	float x;
-	float y;
-	float heading;
-} GPS_INFO;
-
 typedef enum {
 	WEAPON_MISSILE,
 	WEAPON_LASER,
 	WEAPON_NONE
 } WEAPONTYPE;
+
+typedef enum {
+	MISSILE,
+	LASER,
+	ROBOT,
+	WALL
+}DAMAGETYPE;
+
+typedef struct {
+	float x;
+	float y;
+	float heading;
+} GPS_INFO;
 
 /**
  * 
