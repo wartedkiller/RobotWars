@@ -15,6 +15,7 @@
 #define MAX_SPEED			100.0f				//In cm/s
 #define TREAD_DISTANCE		15.0f
 #define TURBO_ENERGY_COST	100
+#define GPS_ENERGY_COST		2
 #define TURBO_TIME			3.0f
 #define TURBO_SPEED			200
 
@@ -133,6 +134,9 @@ private:
 
 	UPROPERTY()
 		class UEnergySystem* EnergySystem;
+
+	UPROPERTY()
+		class ULaserSystem* LaserSystem;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 		class UMissileSystem* MissileSystem;

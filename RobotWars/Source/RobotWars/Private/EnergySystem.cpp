@@ -46,6 +46,21 @@ int32 UEnergySystem::SetSystemChargePriorites(SYSTEM priorities[NUM_ENERGY_SYSTE
 	return 1;
 }
 
+int32 UEnergySystem::GetLaserDamage()
+{
+	if (CurrentEnergy[SYSTEM_LASERS] >= MIN_LASER_ENERGY && CurrentEnergy[SYSTEM_LASERS] <= MAX_LASER_ENERGY)
+	{
+		int32 Damage = CurrentEnergy[SYSTEM_LASERS];
+		CurrentEnergy[SYSTEM_LASERS] = 0;
+		return Damage;
+	}
+	else
+	{
+		CurrentEnergy[SYSTEM_LASERS] = 0;
+		return 0;
+	}
+}
+
 float UEnergySystem::GetSystemEnergy(SYSTEM type)
 {
 	switch (type)

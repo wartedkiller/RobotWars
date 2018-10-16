@@ -1,20 +1,14 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Missile.h"
+#include "Laser.h"
 #include "PaperSpriteComponent.h"
 #include "RobotWarsStatics.h"
 #include "Components/ArrowComponent.h"
 #include "Engine/World.h"
 #include "Robot.h"
 
-
-/****************************************************
-IF ANYTHING CHANGE IN THE CONSTRUCTOR OF THIS CLASS,
-THE ENGINE MUST BE RESTARTED TO SEE THE CHANGE.
-FAILING TO DO SO WILL RESULT IN SEEING WEIRD RESULT
-OF WHAT YOU ARE TRYING TO DO.
-****************************************************/
-AMissile::AMissile()
+// Sets default values
+ALaser::ALaser()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -23,28 +17,28 @@ AMissile::AMissile()
 
 	if (!RootComponent)
 	{
-		RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("MissileBase"));
+		RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("LaserBase"));
 	}
 
-	MissileDirection = CreateDefaultSubobject<UArrowComponent>(TEXT("MissileDirection"));
-	MissileDirection->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+	LaserDirection = CreateDefaultSubobject<UArrowComponent>(TEXT("LaserDirection"));
+	LaserDirection->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
 
-	MissileSprite = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("MissileSprite"));
-	MissileSprite->AttachToComponent(MissileDirection, FAttachmentTransformRules::KeepWorldTransform);
+	LaserSprite = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("LaserSprite"));
+	LaserSprite->AttachToComponent(LaserDirection, FAttachmentTransformRules::KeepWorldTransform);
 
 	MovementCollisionProfile = TEXT("Projectile:Fly");
 
 }
 
 // Called when the game starts or when spawned
-void AMissile::BeginPlay()
+void ALaser::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 }
 
 // Called every frame
-void AMissile::Tick(float DeltaTime)
+void ALaser::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
@@ -53,7 +47,7 @@ void AMissile::Tick(float DeltaTime)
 	//Add the distance flown by the missile during DeltaTime
 	FVector DesiredEndLocation = CurrentLocation + ((DeltaTime * MISSILE_SPEED) * GetTransform().GetUnitAxis(EAxis::X));
 
-	
+
 	//Check for collision
 	if (UWorld* World = GetWorld())
 	{
@@ -78,7 +72,7 @@ void AMissile::Tick(float DeltaTime)
 					//TODO Check for splash damage from the explosion.
 					if (ARobot* HitRobot = Cast<ARobot>(OutHit[CurrentCollision].GetActor()))
 					{
-						HitRobot->GetHit(MISSILE, MISSILE_DAMAGE);
+						HitRobot->GetHit(LASER, MISSILE_DAMAGE);
 						Explode();
 						break;
 					}
@@ -93,11 +87,15 @@ void AMissile::Tick(float DeltaTime)
 	}
 }
 
-//TODO Add damage based on distance of the explosion.
-void AMissile::Explode()
+void ALaser::SetDamage(int32 Damage)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Insert Missile Explosion Here"))
-	
-	Destroy();
+	LaserDamage = Damage;
+}
+
+void ALaser::Explode()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Laser hit for %i damage"), LaserDamage)
+
+		Destroy();
 }
 

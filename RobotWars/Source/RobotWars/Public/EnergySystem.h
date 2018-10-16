@@ -9,7 +9,7 @@
 #include "Robot.h"
 #include "EnergySystem.generated.h"
 
-//TODO Change Energy cost value to /sec instead of /min since DeltaTime is in sec?
+//TODO Change Energy cost value to /sec instead of /min since DeltaTime is in sec? It cost a float division everytime I use a /min cost.
 #define MAX_GENERATOR_STRUCTURE		500
 #define GENERATOR_CAPACITY			1400
 #define MAX_SHIELD_ENERGY			1000
@@ -38,6 +38,7 @@ public:
 	int32 GetGeneratorStructur();
 	int32 GetGeneratorOutput();
 	int32 SetSystemChargePriorites(SYSTEM priorities[NUM_ENERGY_SYSTEMS]);
+	int32 GetLaserDamage();
 	float GetSystemEnergy(SYSTEM type);
 	void SetSystemChargeRate(SYSTEM type, int32 rate);
 	void UpdateEnergySystem(float DeltaTime, ARobot* robot);

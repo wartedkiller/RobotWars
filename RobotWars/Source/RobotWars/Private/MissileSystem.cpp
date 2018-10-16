@@ -34,7 +34,11 @@ bool UMissileSystem::Fire(class AActor* Robot, FVector Location, FRotator Headin
 			FActorSpawnParameters SpawnParams;
 			SpawnParams.Owner = Robot;
 
-			World->SpawnActor<AMissile>(MissileToSpawn, Location, Heading, SpawnParams);
+			AMissile* temp = World->SpawnActor<AMissile>(MissileToSpawn, Location, Heading, SpawnParams);
+			if (temp)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Missile spawned correctly"))
+			}
 			UE_LOG(LogTemp, Warning, TEXT("Missile Fire"))
 			return true;
 		}

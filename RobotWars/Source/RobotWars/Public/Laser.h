@@ -5,42 +5,33 @@
 #include "CoreMinimal.h"
 #include "PaperCharacter.h"
 #include "GameFramework/Actor.h"
-#include "Missile.generated.h"
+#include "Laser.generated.h"
 
-#define MISSILE_SPEED	150.0f
-#define MISSILE_DAMAGE	150
+#define LASER_SPEED		200.0f
 
 UCLASS()
-class ROBOTWARS_API AMissile : public AActor
+class ROBOTWARS_API ALaser : public AActor
 {
 	GENERATED_BODY()
 	
-/********METHODS********/
 public:	
 	// Sets default values for this actor's properties
-	AMissile();
+	ALaser();
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	// Debug tool - Show which way the Missile is facing
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Missile", meta = (AllowPrivateAccess = "true"))
-		class UArrowComponent* MissileDirection;
-
-	//Sprite for the Missile.
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Missile", meta = (AllowPrivateAccess = "true"))
-		class UPaperSpriteComponent* MissileSprite;
-
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	void SetDamage(int32 Damage);
 
 private:
 	void Explode();
+	
 
-
-/********VARIABLES********/
+	/********VARIABLES********/
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Projectile")
@@ -48,5 +39,16 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Projectile")
 		float Radius;
-	
+
+protected:
+	// Debug tool - Show which way the Laser is facing
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Laser", meta = (AllowPrivateAccess = "true"))
+		class UArrowComponent* LaserDirection;
+
+	//Sprite for the Laser.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Laser", meta = (AllowPrivateAccess = "true"))
+		class UPaperSpriteComponent* LaserSprite;
+
+private:
+	int32 LaserDamage = 0;
 };

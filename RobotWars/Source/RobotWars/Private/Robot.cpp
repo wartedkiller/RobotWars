@@ -14,9 +14,12 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/StaticMesh.h"
 #include "MissileSystem.h"
+#include "LaserSystem.h"
 #include "EnergySystem.h"
 #include "SensorSystem.h"
 #include "DrawDebugHelpers.h"
+
+//TODO Add LaserSystem and test it.
 
 /****************************************************
 IF ANYTHING CHANGE IN THE CONSTRUCTOR OF THIS CLASS,
@@ -66,8 +69,7 @@ ARobot::ARobot()
 	RobotCollisionCapsule->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
 	RobotCollisionCapsule->InitCapsuleSize(23.0f, 200.0f); 
 
-	//Creating the UStaticMeshComponent for the Shield and assingning a 2D plane
-	//as it's mesh.
+	//Creating the UStaticMeshComponent for the Shield.
 	RobotShield = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RobotShield"));
 	RobotShield->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> ShieldVisualAsset(TEXT("StaticMesh'/Game/Mesh/Shield.Shield'"));
@@ -92,6 +94,7 @@ ARobot::ARobot()
 		UE_LOG(LogTemp, Warning, TEXT("Could not load the Shield material."))
 	}
 
+	//Loading the RangeSensor material to be used in the BeginPlay() method.
 	static ConstructorHelpers::FObjectFinder<UMaterial> RangeSensorMaterialGetter(TEXT("Material'/Game/Material/RangeSensorMaterial_MAT.RangeSensorMaterial_MAT'"));
 	if (RangeSensorMaterialGetter.Succeeded())
 	{
@@ -102,12 +105,6 @@ ARobot::ARobot()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Could not load the RangeSensor material."))
 	}
-
-	//Creating a UMissileSystem so this Robot can Fire Missiles. Currently trying to solve the problem. See in BeginPlay().
-	//MissileSystem = CreateDefaultSubobject<UMissileSystem>(TEXT("Missilesystem"));
-
-	//Creating the UEnergySystem for the Robot. Same as MissileSystem.
-	//EnergySystem = CreateDefaultSubobject<UEnergySystem>(TEXT("EnergySystem"));
 
 	//Initializing Sensors
 	SensorMeshArray[0] = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SensorMesh0"));
@@ -186,6 +183,8 @@ void ARobot::BeginPlay()
 	//This is a test to try and solve the problem with the MissileSystem.
 	MissileSystem = NewObject<UMissileSystem>(this, UMissileSystem::StaticClass());
 
+	LaserSystem = NewObject<ULaserSystem>(this, ULaserSystem::StaticClass());
+
 	EnergySystem = NewObject<UEnergySystem>(this, UEnergySystem::StaticClass());
 }
 
@@ -234,6 +233,8 @@ int32 ARobot::TurboBoost()
 {
 	if (EnergySystem->GetSystemEnergy(SYSTEM_SHIELDS) >= TURBO_ENERGY_COST)
 	{
+		EnergySystem->RemoveEnergy(TURBO_ENERGY_COST);
+
 		GetWorldTimerManager().SetTimer(TurboTimerHandle, this, &ARobot::TurnBoosOff, TURBO_TIME);
 		TurboOn = 1;
 		return 1;
@@ -257,7 +258,20 @@ void ARobot::FireWeapon(WEAPONTYPE type, int32 heading)
 		{
 			FRotator MissileHeading = RobotDirection->GetComponentRotation();
 			MissileHeading.Yaw += heading;
+			//TODO Remove Energy when missile is fired;
 			MissileSystem->Fire(this, GetActorLocation(), MissileHeading);
+		}
+		break;
+	case WEAPON_LASER:
+		if (true)
+		{
+			FRotator LaserHeading = RobotDirection->GetComponentRotation();
+			LaserHeading.Yaw += heading;
+
+			//TODO Make sure the conversion from float to int32 != 0 when getting the LsserDamage
+			int32 LaserDamage = EnergySystem->GetLaserDamage();
+
+			LaserSystem->Fire(this, GetActorLocation(), LaserHeading, LaserDamage);
 		}
 		break;
 	default:
@@ -371,7 +385,14 @@ void ARobot::SetSensorStatus(int32 port, int32 status)
 {
 	if (SensorArray[port])
 	{
-		SensorArray[port]->SetSensorStatus(status);
+		if (status == 1)
+		{
+			SensorArray[port]->SetSensorStatus(true);
+		}
+		else if (status == 0)
+		{
+			SensorArray[port]->SetSensorStatus(false);
+		}
 	}
 }
 
@@ -384,19 +405,29 @@ int32 ARobot::GetBumpInfo()
 
 GPS_INFO ARobot::GetGPSInfo()
 {
-	//TODO Remove Energy for the GPS call.
 	FVector temp = GetActorLocation();
 	GPS_INFO GPSInfo;
 
-	GPSInfo.x = temp.X;
-	GPSInfo.y = temp.Y;
-	GPSInfo.heading = GetActorRotation().Yaw;
+	if (EnergySystem->GetSystemEnergy(SYSTEM_SHIELDS) >= GPS_ENERGY_COST)
+	{
+		//Checking if there is enough energy in the shield before removing it because it will remove the cost in the Generator if there is not enough shield energy.
+		EnergySystem->RemoveEnergy(GPS_ENERGY_COST);
+
+		GPSInfo.x = temp.X;
+		GPSInfo.y = temp.Y;
+		GPSInfo.heading = GetActorRotation().Yaw;
+	}
+	else
+	{
+		GPSInfo.x = 0;
+		GPSInfo.y = 0;
+		GPSInfo.heading = 0;
+	}
 
 	return GPSInfo;
 }
 
-//TODO The Robot is turning super quickly when one of the thread is negative.
-//Might want to slow it down.
+//TODO The Robot is turning super quickly when one of the thread is negative. Might want to slow it down.
 //TODO Robot-Robot collision.
 void ARobot::MoveRobot(float DeltaTime)
 {
@@ -517,38 +548,45 @@ void ARobot::MoveRobot(float DeltaTime)
 	SetActorLocation(FuturPosition);
 }
 
-//TODO turn Sensor off if not enough energy or if player turn them off
+
 void ARobot::UpdateSensor()
 {
 	for (int32 i = 0; i < MAX_SENSORS; i++)
 	{
-		if (SensorArray[i]->GetTypeOfSensor() != SENSOR_NONE && SensorArray[i]->IsEnoughEnergy() && SensorArray[i]->IsSensorOn())
+		if (SensorArray[i]->GetTypeOfSensor() != SENSOR_NONE)
 		{
-			if (SensorArray[i]->GetTypeOfSensor() == SENSOR_RANGE)
+			if (SensorArray[i]->IsEnoughEnergy() && SensorArray[i]->IsSensorOn())
 			{
-
-				//Update the line position of the sensor as if there is no collision.
-				int32 SensorAngle = SensorArray[i]->GetSensorAngle();
-
-				FVector PosStart = RobotDirection->GetComponentLocation();
-				FVector PosEnd = PosStart + RobotDirection->GetComponentRotation().Vector() * SensorArray[i]->GetSensorRange();
-
-				if (UWorld* World = GetWorld())
+				//if the sensor was off or didn't have enough energy last turn and now everything is ON, render the mesh.
+				if (SensorMeshArray[i]->bHiddenInGame)
 				{
-					TArray<FHitResult> OutHit;
+					SensorMeshArray[i]->SetHiddenInGame(false);
+				}
 
-					FCollisionShape CollisionShape;
-					CollisionShape.SetCapsule(5.0f, 200.0f);
+				if (SensorArray[i]->GetTypeOfSensor() == SENSOR_RANGE)
+				{
+					//Update the line position of the sensor as if there is no collision.
+					int32 SensorAngle = SensorArray[i]->GetSensorAngle();
 
-					//Check if there is a collision and update the EndPos with the point of contact of the collision.
-					//Since it can hit multiple AActor (including itself), I made the decision to stop after the first hit that is not itself.
-					//Weirdly enough, I need to use the Projectile:Fly collision profile even though the RangeSensor is identical. This means RangeSensor can detect missile and laser. (For now)
-					//TODO Change the collision to only hit the Robot.
-					if (World->SweepMultiByProfile(OutHit, PosStart, PosEnd, FQuat(FRotator(0.0f, SensorArray[i]->GetSensorAngle(), 0.0f)), TEXT("Projectile:Fly"), CollisionShape))
+					FVector PosStart = RobotDirection->GetComponentLocation();
+					FVector PosEnd = PosStart + RobotDirection->GetComponentRotation().Vector() * SensorArray[i]->GetSensorRange();
+
+					if (UWorld* World = GetWorld())
 					{
-						for (int32 CurrentCollision = 0; CurrentCollision < OutHit.Num(); CurrentCollision++)
+						TArray<FHitResult> OutHit;
+
+						FCollisionShape CollisionShape;
+						CollisionShape.SetCapsule(5.0f, 200.0f);
+
+						//Check if there is a collision and update the EndPos with the point of contact of the collision.
+						//Since it can hit multiple AActor (including itself), I made the decision to stop after the first hit that is not itself.
+						//Weirdly enough, I need to use the Projectile:Fly collision profile even though the RangeSensor is identical. This means RangeSensor can detect missile and laser. (For now)
+						//TODO Change the collision to only hit the Robot.
+						if (World->SweepMultiByProfile(OutHit, PosStart, PosEnd, FQuat(FRotator(0.0f, SensorArray[i]->GetSensorAngle(), 0.0f)), TEXT("Projectile:Fly"), CollisionShape))
 						{
-							AActor* OtherActor = OutHit[CurrentCollision].GetActor();
+							for (int32 CurrentCollision = 0; CurrentCollision < OutHit.Num(); CurrentCollision++)
+							{
+								AActor* OtherActor = OutHit[CurrentCollision].GetActor();
 								if (ARobot* temp = Cast<ARobot>(OtherActor))
 								{
 									if (OtherActor->GetName().Compare(this->GetName()) != 0)
@@ -558,14 +596,20 @@ void ARobot::UpdateSensor()
 									}
 
 								}
+							}
+
 						}
-
 					}
-				}
 
-				GetWorld()->LineBatcher->DrawLine(PosStart, PosEnd, RobotColor, 1, 2.0f);
-				SensorMeshArray[i]->SetWorldLocation(PosEnd);
+					GetWorld()->LineBatcher->DrawLine(PosStart, PosEnd, RobotColor, 1, 2.0f);
+					SensorMeshArray[i]->SetWorldLocation(PosEnd);
+				}
 			}
+			else
+			{
+				SensorMeshArray[i]->SetHiddenInGame(true);
+			}
+			
 		}
 	}
 }
@@ -603,15 +647,14 @@ void ARobot::RadarOverlap(UPrimitiveComponent * OverlappedComponent, AActor * Ot
 		{
 			if (SensorArray[i]->GetTypeOfSensor() == SENSOR_RADAR)
 			{
-				//Find the right Sensor.
-				if (Cast<UStaticMeshComponent>(OverlappedComponent) == SensorMeshArray[i])
+				//Find the right Sensor and check if it's powered and turned on.
+				if (Cast<UStaticMeshComponent>(OverlappedComponent) == SensorMeshArray[i] && !SensorMeshArray[i]->bHiddenInGame)
 				{
 					//Check if the Sensor is already set to 1.
 					if (SensorArray[i]->GetSensorData() != 1)
 					{
 						//MAGIC NUMBER ALERT! Right now Radar Sensor can only detect Robot but in a futur iteration it might want to detect missiles or other new weapon.
 						SensorArray[i]->SetSensorData(1);
-						UE_LOG(LogTemp, Warning, TEXT("Sensor data is Set to 1"))
 					}
 				}
 			}

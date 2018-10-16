@@ -18,11 +18,16 @@ void ATestRobot::BeginPlay()
 	Super::BeginPlay();
 
 	SetMotorSpeeds(20, 20);
+
 	FireWeapon(WEAPON_MISSILE, 0);
+	FireWeapon(WEAPON_LASER, 45);
+
 	SetSystemChargeRate(SYSTEM_SHIELDS, 600);
 	SetSystemChargeRate(SYSTEM_LASERS, 200);
 	SetSystemChargeRate(SYSTEM_MISSILES, 300);
 	
 	AddSensor(1, SENSOR_RADAR, 0, 45, 100);
 	AddSensor(0, SENSOR_RANGE, 0, 0, 125);
+
+	SetSensorStatus(0, 0);
 }
