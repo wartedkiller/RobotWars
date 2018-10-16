@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "EnergySystem.h"
+#include "Missile.h"
 
 UEnergySystem::UEnergySystem()
 {
@@ -46,18 +47,39 @@ int32 UEnergySystem::SetSystemChargePriorites(SYSTEM priorities[NUM_ENERGY_SYSTE
 	return 1;
 }
 
-int32 UEnergySystem::GetLaserDamage()
+float UEnergySystem::GetWeaponDamage(WEAPONTYPE Type)
 {
-	if (CurrentEnergy[SYSTEM_LASERS] >= MIN_LASER_ENERGY && CurrentEnergy[SYSTEM_LASERS] <= MAX_LASER_ENERGY)
+	switch (Type)
 	{
-		int32 Damage = CurrentEnergy[SYSTEM_LASERS];
-		CurrentEnergy[SYSTEM_LASERS] = 0;
-		return Damage;
-	}
-	else
-	{
-		CurrentEnergy[SYSTEM_LASERS] = 0;
-		return 0;
+	case WEAPON_MISSILE:
+		if (CurrentEnergy[SYSTEM_MISSILES] == MAX_MISSILE_ENERGY)
+		{
+			CurrentEnergy[SYSTEM_MISSILES] = 0;
+			//MAGIC NUMBER ALERT!!!! Should be AMissile::MISSILE_DAMAGE but it doesn't work.
+			return 150;
+		}
+		else
+		{
+			CurrentEnergy[SYSTEM_MISSILES] = 0;
+			return -1;
+		}
+			break;
+	case WEAPON_LASER:
+		if (CurrentEnergy[SYSTEM_LASERS] >= MIN_LASER_ENERGY && CurrentEnergy[SYSTEM_LASERS] <= MAX_LASER_ENERGY)
+		{
+			float Damage = CurrentEnergy[SYSTEM_LASERS];
+			CurrentEnergy[SYSTEM_LASERS] = 0;
+			return Damage;
+		}
+		else
+		{
+			CurrentEnergy[SYSTEM_LASERS] = 0;
+			return -1;
+		}
+		break;
+	default:
+		return -1;
+		break;
 	}
 }
 

@@ -20,7 +20,7 @@ class ROBOTWARS_API ULaserSystem : public UObject
 
 public:
 	ULaserSystem();
-	bool Fire(class AActor* Robot, FVector Location, FRotator Heading, int32 Damage);
+	bool Fire(class AActor* Robot, FVector Location, FRotator Heading, float Damage);
 	
 ///********** VARIABLE ***********************************************************************************************************************************************
 

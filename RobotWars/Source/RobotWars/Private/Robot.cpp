@@ -19,7 +19,6 @@
 #include "SensorSystem.h"
 #include "DrawDebugHelpers.h"
 
-//TODO Add LaserSystem and test it.
 
 /****************************************************
 IF ANYTHING CHANGE IN THE CONSTRUCTOR OF THIS CLASS,
@@ -116,6 +115,7 @@ ARobot::ARobot()
 	SensorMeshArray[3] = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SensorMesh3"));
 	SensorMeshArray[3]->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
 
+	RobotCollisionProfile = TEXT("Robot");
 
 	//This will be remove and placed in the spectator.
 	///If something is changed to the SpringArm or the CameraComponent, you must restart UE4
@@ -254,24 +254,30 @@ void ARobot::FireWeapon(WEAPONTYPE type, int32 heading)
 	switch (type)
 	{
 	case WEAPON_MISSILE:
-		if (heading >= -MISSILE_MAX_ANGLE && heading <= MISSILE_MAX_ANGLE)
+		if (true)
 		{
-			FRotator MissileHeading = RobotDirection->GetComponentRotation();
-			MissileHeading.Yaw += heading;
-			//TODO Remove Energy when missile is fired;
-			MissileSystem->Fire(this, GetActorLocation(), MissileHeading);
+			float MissileDamage = 0;
+			if ((MissileDamage = EnergySystem->GetWeaponDamage(WEAPON_MISSILE)) > 0)
+			{
+				if (heading >= -MISSILE_MAX_ANGLE && heading <= MISSILE_MAX_ANGLE)
+				{
+					FRotator MissileHeading = RobotDirection->GetComponentRotation();
+					MissileHeading.Yaw += heading;
+					MissileSystem->Fire(this, GetActorLocation(), MissileHeading, MissileDamage);
+				}
+			}
 		}
 		break;
 	case WEAPON_LASER:
 		if (true)
 		{
-			FRotator LaserHeading = RobotDirection->GetComponentRotation();
-			LaserHeading.Yaw += heading;
-
-			//TODO Make sure the conversion from float to int32 != 0 when getting the LsserDamage
-			int32 LaserDamage = EnergySystem->GetLaserDamage();
-
-			LaserSystem->Fire(this, GetActorLocation(), LaserHeading, LaserDamage);
+			float LaserDamage = 0;
+			if ((LaserDamage = EnergySystem->GetWeaponDamage(WEAPON_LASER)) > 0)
+			{
+					FRotator LaserHeading = RobotDirection->GetComponentRotation();
+				LaserHeading.Yaw += heading;
+				LaserSystem->Fire(this, GetActorLocation(), LaserHeading, LaserDamage);
+			}
 		}
 		break;
 	default:
@@ -428,7 +434,6 @@ GPS_INFO ARobot::GetGPSInfo()
 }
 
 //TODO The Robot is turning super quickly when one of the thread is negative. Might want to slow it down.
-//TODO Robot-Robot collision.
 void ARobot::MoveRobot(float DeltaTime)
 {
 	//Initializing initial variable so they can be used even if they don't change.
@@ -439,6 +444,18 @@ void ARobot::MoveRobot(float DeltaTime)
 
 	float DistanceLeftTread = 0.0f;
 	float DistanceRightTread = 0.0f;
+
+	//TODO Set the recoil for the Robot-Robot collision.
+
+	if (RecoilVelocity > 0.0f)
+	{
+		FuturPosition += FVector(RecoilVelocity * DeltaTime * FMath::Cos(RecoilHeading), RecoilVelocity * DeltaTime * FMath::Sin(RecoilHeading), 0.0f);
+		RecoilVelocity -= 40.0f * DeltaTime;
+		if (RecoilVelocity < 0.0f)
+		{
+			RecoilVelocity = 0.0f;
+		}
+	}
 
 	//This is the lenght of the movement vector.
 	//The direction (positive or negative) has been accounted for in the math.
@@ -543,6 +560,50 @@ void ARobot::MoveRobot(float DeltaTime)
 			FuturPosition += FVector(MovementFromCenter * FMath::Cos(FuturHeading), MovementFromCenter * FMath::Sin(FuturHeading), 0.0f);
 		}
 	}
+
+	//Robot - Robot Collision detection.
+	if (UWorld* World = GetWorld())
+	{
+		TArray<FHitResult> OutHit;
+		if (World->SweepMultiByProfile(OutHit, RobotDirection->GetComponentLocation(), FuturPosition, FQuat::Identity, RobotCollisionProfile, RobotCollisionCapsule->GetCollisionShape()))
+		{
+			for (FHitResult CurrentHit : OutHit)
+			{
+				if (UCapsuleComponent* CollisionChecker = Cast<UCapsuleComponent>(CurrentHit.GetComponent()))
+				{
+					if (ARobot* CurrentHitActor = Cast<ARobot>(CurrentHit.GetActor()))
+					{
+						if (CurrentHitActor->GetName().Compare(this->GetName()) != 0)
+						{
+							//TODO Check recoil speed. Might need to do some real math.
+							FVector RecoilDirection = this->GetActorLocation() - CurrentHitActor->GetActorLocation();
+							RecoilDirection.Normalize();
+
+							float NewRecoilHeading = RecoilDirection.HeadingAngle();
+
+							if (RecoilVelocity == 0.0f)
+							{
+								RecoilHeading = NewRecoilHeading;
+								//RecoilVelocity = (RobotSpeed + CurrentHitActor->GetRobotSpeed());
+							}
+							else
+							{
+								RecoilHeading = (RecoilHeading + NewRecoilHeading) / 2;
+								//RecoilVelocity = (RobotSpeed / 2 + CurrentHitActor->GetRobotSpeed());
+							}
+							RecoilVelocity = 80.0f;
+							UE_LOG(LogTemp, Warning, TEXT("Recoil heading : %f    Recoild Velocity = %f"), NewRecoilHeading, RecoilVelocity)
+							
+							break;
+						}
+					}
+
+				}
+			}
+		}
+	}
+
+	RobotSpeed = FVector::Distance(this->GetActorLocation(), FuturPosition) / DeltaTime;
 
 	RobotDirection->SetWorldRotation(FRotator(0.0f, FMath::RadiansToDegrees(FuturHeading), 0.0f));
 	SetActorLocation(FuturPosition);
@@ -728,7 +789,7 @@ void ARobot::SetRobotColor(FLinearColor color)
 }
 
 
-void ARobot::GetHit(DAMAGETYPE DamageType, int32 DamageValue)
+void ARobot::GetHit(DAMAGETYPE DamageType, float DamageValue)
 {
 	switch (DamageType)
 	{
@@ -755,10 +816,15 @@ void ARobot::GetHit(DAMAGETYPE DamageType, int32 DamageValue)
 	}
 	UpdateShield();
 
-	UE_LOG(LogTemp, Warning, TEXT("%s got hit"), *GetName())
+	UE_LOG(LogTemp, Warning, TEXT("%s got hit for %f damage"), *GetName(), DamageValue)
 }
 
 USensorSystem* ARobot::GetSensor(int index)
 {
 	return SensorArray[index];
+}
+
+float ARobot::GetRobotSpeed()
+{
+	return RobotSpeed;
 }

@@ -37,8 +37,10 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	void SetRobotColor(FLinearColor color);
-	void GetHit(DAMAGETYPE DamageType, int32 DamageValue);
+	void GetHit(DAMAGETYPE DamageType, float DamageValue);
 	USensorSystem* GetSensor(int index);
+
+	float GetRobotSpeed();
 
 protected:
 	// Called when the game starts or when spawned
@@ -115,7 +117,13 @@ private:
 	int32 TurboOn = 0;
 	int32 BumpInfo = 0;
 
+	float RobotSpeed = 0.0f;
+	float RecoilVelocity = 0.0f;
+	float RecoilHeading = 0.0f;
+
 	FTimerHandle TurboTimerHandle;
+
+	FName RobotCollisionProfile;
 
 	class UMaterial* ShieldMaterialHelper;
 	class UMaterialInstanceDynamic* ShieldMaterial;

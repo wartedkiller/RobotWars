@@ -18,7 +18,7 @@ ULaserSystem::ULaserSystem()
 	}
 }
 
-bool ULaserSystem::Fire(AActor * Robot, FVector Location, FRotator Heading, int32 Damage)
+bool ULaserSystem::Fire(AActor * Robot, FVector Location, FRotator Heading, float Damage)
 {
 	if (LaserToSpawn)
 	{
@@ -30,7 +30,6 @@ bool ULaserSystem::Fire(AActor * Robot, FVector Location, FRotator Heading, int3
 
 			ALaser* NewLaser = World->SpawnActor<ALaser>(LaserToSpawn, Location, Heading, SpawnParams);
 			NewLaser->SetDamage(Damage);
-			UE_LOG(LogTemp, Warning, TEXT("Laser Fired"))
 			return true;
 		}
 	}

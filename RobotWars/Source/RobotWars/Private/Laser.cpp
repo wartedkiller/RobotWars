@@ -72,7 +72,7 @@ void ALaser::Tick(float DeltaTime)
 					//TODO Check for splash damage from the explosion.
 					if (ARobot* HitRobot = Cast<ARobot>(OutHit[CurrentCollision].GetActor()))
 					{
-						HitRobot->GetHit(LASER, MISSILE_DAMAGE);
+						HitRobot->GetHit(LASER, LaserDamage);
 						Explode();
 						break;
 					}
@@ -87,14 +87,14 @@ void ALaser::Tick(float DeltaTime)
 	}
 }
 
-void ALaser::SetDamage(int32 Damage)
+void ALaser::SetDamage(float Damage)
 {
 	LaserDamage = Damage;
 }
 
 void ALaser::Explode()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Laser hit for %i damage"), LaserDamage)
+	UE_LOG(LogTemp, Warning, TEXT("Laser hit for %f damage"), LaserDamage)
 
 		Destroy();
 }

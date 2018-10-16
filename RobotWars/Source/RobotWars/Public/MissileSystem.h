@@ -22,7 +22,7 @@ class ROBOTWARS_API UMissileSystem : public UObject
 
 public:
 	UMissileSystem();
-	bool Fire(class AActor* Robot, FVector Location, FRotator Heading);
+	bool Fire(class AActor* Robot, FVector Location, FRotator Heading, float Damage);
 
 
 ///********** VARIABLE ***********************************************************************************************************************************************
@@ -34,4 +34,5 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Missile", meta = (AllowPrivateAccess = "true"))
 		TSubclassOf<AMissile> MissileToSpawn;
 	
+	int32 MissileDamage = 0;
 };

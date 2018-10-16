@@ -25,7 +25,7 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-	void SetDamage(int32 Damage);
+	void SetDamage(float Damage);
 
 private:
 	void Explode();
@@ -50,5 +50,5 @@ protected:
 		class UPaperSpriteComponent* LaserSprite;
 
 private:
-	int32 LaserDamage = 0;
+	float LaserDamage = 0;
 };

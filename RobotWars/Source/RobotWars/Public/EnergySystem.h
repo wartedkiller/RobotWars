@@ -38,7 +38,7 @@ public:
 	int32 GetGeneratorStructur();
 	int32 GetGeneratorOutput();
 	int32 SetSystemChargePriorites(SYSTEM priorities[NUM_ENERGY_SYSTEMS]);
-	int32 GetLaserDamage();
+	float GetWeaponDamage(WEAPONTYPE Type);
 	float GetSystemEnergy(SYSTEM type);
 	void SetSystemChargeRate(SYSTEM type, int32 rate);
 	void UpdateEnergySystem(float DeltaTime, ARobot* robot);
