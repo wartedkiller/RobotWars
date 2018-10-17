@@ -29,10 +29,10 @@ typedef enum {
 } WEAPONTYPE;
 
 typedef enum {
-	MISSILE,
-	LASER,
-	ROBOT,
-	WALL
+	DAMAGE_MISSILE,
+	DAMAGE_LASER,
+	DAMAGE_ROBOT,
+	DAMAGE_WALL
 }DAMAGETYPE;
 
 typedef struct {

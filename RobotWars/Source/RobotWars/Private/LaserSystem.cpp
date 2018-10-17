@@ -14,7 +14,7 @@ ULaserSystem::ULaserSystem()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Missile Blueprint could not be found so NO MISSILE WILL SPAWN"))
+		UE_LOG(LogTemp, Warning, TEXT("Laser Blueprint could not be found so NO LASER WILL SPAWN"))
 	}
 }
 

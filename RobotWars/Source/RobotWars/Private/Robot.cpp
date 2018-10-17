@@ -66,7 +66,7 @@ ARobot::ARobot()
 	//of the Robots is not important. That's why the Capsule is 200 unit high.
 	RobotCollisionCapsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RobotCollisionCapsule"));
 	RobotCollisionCapsule->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
-	RobotCollisionCapsule->InitCapsuleSize(23.0f, 200.0f); 
+	RobotCollisionCapsule->InitCapsuleSize(25.0f, 200.0f); 
 
 	//Creating the UStaticMeshComponent for the Shield.
 	RobotShield = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RobotShield"));
@@ -445,12 +445,11 @@ void ARobot::MoveRobot(float DeltaTime)
 	float DistanceLeftTread = 0.0f;
 	float DistanceRightTread = 0.0f;
 
-	//TODO Set the recoil for the Robot-Robot collision.
-
+	//Check if there is a recoil happening from a Robot-Robot collision.
 	if (RecoilVelocity > 0.0f)
 	{
 		FuturPosition += FVector(RecoilVelocity * DeltaTime * FMath::Cos(RecoilHeading), RecoilVelocity * DeltaTime * FMath::Sin(RecoilHeading), 0.0f);
-		RecoilVelocity -= 40.0f * DeltaTime;
+		RecoilVelocity -= ARENA_FRICTION * DeltaTime;
 		if (RecoilVelocity < 0.0f)
 		{
 			RecoilVelocity = 0.0f;
@@ -469,6 +468,7 @@ void ARobot::MoveRobot(float DeltaTime)
 		DistanceLeftTread = (FMath::Abs(LeftTreadSpeed) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
 		DistanceRightTread = (FMath::Abs(RightTreadSpeed) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
 	}
+
 
 	//Case 1 : The Robot is moving without turning.
 	//There is no math for this case since it's trivial.
@@ -561,6 +561,9 @@ void ARobot::MoveRobot(float DeltaTime)
 		}
 	}
 
+	RobotSpeed = FVector::Distance(this->GetActorLocation(), FuturPosition) / DeltaTime;
+
+	bCollisionThisTurn = false;
 	//Robot - Robot Collision detection.
 	if (UWorld* World = GetWorld())
 	{
@@ -575,25 +578,44 @@ void ARobot::MoveRobot(float DeltaTime)
 					{
 						if (CurrentHitActor->GetName().Compare(this->GetName()) != 0)
 						{
-							//TODO Check recoil speed. Might need to do some real math.
+							//Check for double collision.
+							if (PreviousFrameCollisionRobot != nullptr)
+							{
+								if (CurrentHitActor->GetName().Compare(PreviousFrameCollisionRobot->GetName()) == 0)
+								{
+									break;
+								}
+								else
+								{
+									PreviousFrameCollisionRobot = nullptr;
+								}
+							}
+							bCollisionThisTurn = true;
+							//TODO Check recoil speed. Currently acceptable but might need to do some real math.
 							FVector RecoilDirection = this->GetActorLocation() - CurrentHitActor->GetActorLocation();
 							RecoilDirection.Normalize();
 
+							PreviousFrameCollisionRobot = CurrentHitActor;
+
 							float NewRecoilHeading = RecoilDirection.HeadingAngle();
 
-							if (RecoilVelocity == 0.0f)
+							RecoilHeading = NewRecoilHeading;
+
+							//This is not working properly but with Vector calculation it should be fine.
+							/*if (RecoilVelocity == 0.0f)
 							{
 								RecoilHeading = NewRecoilHeading;
-								//RecoilVelocity = (RobotSpeed + CurrentHitActor->GetRobotSpeed());
 							}
 							else
 							{
 								RecoilHeading = (RecoilHeading + NewRecoilHeading) / 2;
-								//RecoilVelocity = (RobotSpeed / 2 + CurrentHitActor->GetRobotSpeed());
-							}
-							RecoilVelocity = 80.0f;
-							UE_LOG(LogTemp, Warning, TEXT("Recoil heading : %f    Recoild Velocity = %f"), NewRecoilHeading, RecoilVelocity)
-							
+							}*/
+							RecoilVelocity = BASE_RECOIL_VELOCITY;
+
+							//TODO Damage should dvantage the Robot going faster.
+							//Current idea: this->RobotSpeed / 2 + CurrentHitActor->GetRobotSpeed()
+							GetHit(DAMAGE_ROBOT, this->RobotSpeed + CurrentHitActor->GetRobotSpeed());
+
 							break;
 						}
 					}
@@ -603,7 +625,10 @@ void ARobot::MoveRobot(float DeltaTime)
 		}
 	}
 
-	RobotSpeed = FVector::Distance(this->GetActorLocation(), FuturPosition) / DeltaTime;
+	if (!bCollisionThisTurn)
+	{
+		PreviousFrameCollisionRobot = nullptr;
+	}
 
 	RobotDirection->SetWorldRotation(FRotator(0.0f, FMath::RadiansToDegrees(FuturHeading), 0.0f));
 	SetActorLocation(FuturPosition);
@@ -685,11 +710,14 @@ void ARobot::UpdateEnergy(float DeltaTime)
 //TODO Test shield transparency value. 0.8f seems a little bit too much.
 void ARobot::UpdateShield()
 {
-	if (RobotShield)
+	if ((EnergySystem->GetSystemEnergy(SYSTEM_SHIELDS) / SHIELDS_LEAK_THRESHOLD) < 1.0f)
 	{
-		if (ShieldMaterial)
+		if (RobotShield)
 		{
-			ShieldMaterial->SetScalarParameterValue("ShieldTransparency", EnergySystem->GetSystemEnergy(SYSTEM_SHIELDS) / MAX_SHIELD_ENERGY * 0.8f);
+			if (ShieldMaterial)
+			{
+				ShieldMaterial->SetScalarParameterValue("ShieldTransparency", EnergySystem->GetSystemEnergy(SYSTEM_SHIELDS) / SHIELDS_LEAK_THRESHOLD * 0.8f);
+			}
 		}
 	}
 }
@@ -793,16 +821,16 @@ void ARobot::GetHit(DAMAGETYPE DamageType, float DamageValue)
 {
 	switch (DamageType)
 	{
-	case MISSILE:
+	case DAMAGE_MISSILE:
 		BumpInfo |= BUMP_MISSILE;
 		break;
-	case LASER:
+	case DAMAGE_LASER:
 		BumpInfo |= BUMP_LASER;
 		break;
-	case ROBOT:
+	case DAMAGE_ROBOT:
 		BumpInfo |= BUMP_ROBOT;
 		break;
-	case WALL:
+	case DAMAGE_WALL:
 		BumpInfo |= BUMP_WALL;
 		break;
 	default:
@@ -811,8 +839,8 @@ void ARobot::GetHit(DAMAGETYPE DamageType, float DamageValue)
 
 	if (!EnergySystem->RemoveEnergy(DamageValue))
 	{
-		//TODO Destroy the robot.
-		return;
+		//TODO Remove the Robot, play explosion.
+		this->Destroy();
 	}
 	UpdateShield();
 

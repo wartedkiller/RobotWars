@@ -78,7 +78,7 @@ void AMissile::Tick(float DeltaTime)
 					//TODO Check for splash damage from the explosion.
 					if (ARobot* HitRobot = Cast<ARobot>(OutHit[CurrentCollision].GetActor()))
 					{
-						HitRobot->GetHit(MISSILE, MISSILE_DAMAGE);
+						HitRobot->GetHit(DAMAGE_MISSILE, MISSILE_DAMAGE);
 						Explode();
 						break;
 					}

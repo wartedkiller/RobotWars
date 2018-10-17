@@ -16,7 +16,6 @@ void ADummyRobot::Tick(float DeltaTime)
 void ADummyRobot::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
 

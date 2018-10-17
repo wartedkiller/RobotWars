@@ -35,8 +35,6 @@ bool UMissileSystem::Fire(class AActor* Robot, FVector Location, FRotator Headin
 			SpawnParams.Owner = Robot;
 
 			AMissile* NewMissile = World->SpawnActor<AMissile>(MissileToSpawn, Location, Heading, SpawnParams);
-			//TODO Set Missile damage.
-			UE_LOG(LogTemp, Warning, TEXT("Missile Fire"))
 			return true;
 		}
 	}

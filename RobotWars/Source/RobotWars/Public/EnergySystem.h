@@ -12,6 +12,7 @@
 //TODO Change Energy cost value to /sec instead of /min since DeltaTime is in sec? It cost a float division everytime I use a /min cost.
 #define MAX_GENERATOR_STRUCTURE		500
 #define GENERATOR_CAPACITY			1400
+#define SHIELDS_LEAK_THRESHOLD		600
 #define MAX_SHIELD_ENERGY			1000
 #define MAX_SHIELD_CHARGE_RATE		600
 #define MAX_LASER_CHARGE_RATE		500

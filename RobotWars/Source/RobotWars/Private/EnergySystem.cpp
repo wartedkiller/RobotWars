@@ -13,7 +13,7 @@ UEnergySystem::UEnergySystem()
 		EnergyChargeRatePerSecond[i] = 0;
 	}
 
-	CurrentEnergy[SYSTEM_SHIELDS] = 400;
+	CurrentEnergy[SYSTEM_SHIELDS] = SHIELDS_LEAK_THRESHOLD;
 
 	SystemPriority.Add(SYSTEM_SHIELDS);
 	SystemPriority.Add(SYSTEM_SENSORS);
@@ -274,6 +274,28 @@ void UEnergySystem::UpdateEnergySystem(float DeltaTime, ARobot* robot)
 
 bool UEnergySystem::RemoveEnergy(int32 Value)
 {
+	if (CurrentEnergy[SYSTEM_SHIELDS] >= SHIELDS_LEAK_THRESHOLD)
+	{
+		CurrentEnergy[SYSTEM_SHIELDS] -= Value;
+	}
+	else
+	{
+		float ShieldProtectionRatio = CurrentEnergy[SYSTEM_SHIELDS] / SHIELDS_LEAK_THRESHOLD;
+		CurrentEnergy[SYSTEM_SHIELDS] -= ShieldProtectionRatio * Value;
+		if (CurrentEnergy[SYSTEM_SHIELDS] < 0)
+		{
+			CurrentGeneratorStructure += CurrentEnergy[SYSTEM_SHIELDS];
+			CurrentEnergy[SYSTEM_SHIELDS] = 0;
+		}
+
+		CurrentGeneratorStructure -= (1 - ShieldProtectionRatio) * Value;
+
+		if (CurrentGeneratorStructure <= 0)
+		{
+			return false;
+		}
+	}
+
 	if (CurrentEnergy[SYSTEM_SHIELDS] >= Value)
 	{
 		CurrentEnergy[SYSTEM_SHIELDS] -= Value;
@@ -284,10 +306,7 @@ bool UEnergySystem::RemoveEnergy(int32 Value)
 		CurrentEnergy[SYSTEM_SHIELDS] = 0;
 		CurrentGeneratorStructure -= Value;
 
-		if (CurrentGeneratorStructure <= 0)
-		{
-			return false;
-		}
+
 	}
 
 	return true;

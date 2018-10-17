@@ -10,14 +10,16 @@
 #include "TimerManager.h"
 #include "Robot.generated.h"
 
-#define MAX_TREAD_SPEED		100.0f
-#define MIN_THREAH_SPEED	-100.0f
-#define MAX_SPEED			100.0f				//In cm/s
-#define TREAD_DISTANCE		15.0f
-#define TURBO_ENERGY_COST	100
-#define GPS_ENERGY_COST		2
-#define TURBO_TIME			3.0f
-#define TURBO_SPEED			200
+#define MAX_TREAD_SPEED			100.0f
+#define MIN_THREAH_SPEED		-100.0f
+#define MAX_SPEED				100.0f				//In UnrealUnit/s
+#define TREAD_DISTANCE			15.0f
+#define TURBO_ENERGY_COST		100
+#define GPS_ENERGY_COST			2
+#define TURBO_TIME				3.0f
+#define TURBO_SPEED				200
+#define ARENA_FRICTION			40.0f
+#define BASE_RECOIL_VELOCITY	80.0f
 
 
 UCLASS()
@@ -120,6 +122,8 @@ private:
 	float RobotSpeed = 0.0f;
 	float RecoilVelocity = 0.0f;
 	float RecoilHeading = 0.0f;
+	bool bCollisionThisTurn = false;
+	ARobot* PreviousFrameCollisionRobot = nullptr;
 
 	FTimerHandle TurboTimerHandle;
 

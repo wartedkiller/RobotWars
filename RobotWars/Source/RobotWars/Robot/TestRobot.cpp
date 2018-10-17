@@ -11,16 +11,21 @@ ATestRobot::ATestRobot()
 void ATestRobot::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (GetSystemEnergy(SYSTEM_MISSILES) == 100) {
+		FireWeapon(WEAPON_MISSILE, 0);
+	}
+	if (GetSystemEnergy(SYSTEM_LASERS) >= 45)
+	{
+		FireWeapon(WEAPON_LASER, 0);
+	}
 }
 
 void ATestRobot::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetMotorSpeeds(20, 20);
-
-	FireWeapon(WEAPON_MISSILE, 0);
-	FireWeapon(WEAPON_LASER, 45);
+	SetMotorSpeeds(0, 0);
 
 	SetSystemChargeRate(SYSTEM_SHIELDS, 600);
 	SetSystemChargeRate(SYSTEM_LASERS, 200);
@@ -28,6 +33,4 @@ void ATestRobot::BeginPlay()
 	
 	AddSensor(1, SENSOR_RADAR, 0, 45, 100);
 	AddSensor(0, SENSOR_RANGE, 0, 0, 125);
-
-	SetSensorStatus(0, 0);
 }
