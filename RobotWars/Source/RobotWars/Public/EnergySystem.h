@@ -10,6 +10,7 @@
 #include "EnergySystem.generated.h"
 
 //TODO Change Energy cost value to /sec instead of /min since DeltaTime is in sec? It cost a float division everytime I use a /min cost.
+//TODO Create a method iin32/bool RemoveEnergyFromShield(int32 EnergyToRemove); to remove Energy Point just from the shield for the GPS and the TurboBoost.
 #define MAX_GENERATOR_STRUCTURE		500
 #define GENERATOR_CAPACITY			1400
 #define SHIELDS_LEAK_THRESHOLD		600
@@ -36,7 +37,7 @@ class ROBOTWARS_API UEnergySystem : public UObject
 public:
 	UEnergySystem();
 
-	int32 GetGeneratorStructur();
+	int32 GetGeneratorStructure();
 	int32 GetGeneratorOutput();
 	int32 SetSystemChargePriorites(SYSTEM priorities[NUM_ENERGY_SYSTEMS]);
 	float GetWeaponDamage(WEAPONTYPE Type);

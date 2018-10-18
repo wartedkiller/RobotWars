@@ -21,7 +21,7 @@ UEnergySystem::UEnergySystem()
 	SystemPriority.Add(SYSTEM_MISSILES);
 }
 
-int32 UEnergySystem::GetGeneratorStructur()
+int32 UEnergySystem::GetGeneratorStructure()
 {
 	return CurrentGeneratorStructure;
 }

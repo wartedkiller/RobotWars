@@ -20,12 +20,22 @@
 #include "DrawDebugHelpers.h"
 
 
-/****************************************************
-IF ANYTHING CHANGE IN THE CONSTRUCTOR OF THIS CLASS,
-THE ENGINE MUST BE RESTARTED TO SEE THE CHANGE.
-FAILING TO DO SO WILL RESULT IN SEEING WEIRD RESULT
-OF WHAT YOU ARE TRYING TO DO.
-****************************************************/
+/***********************************************************************************************
+
+Mehtod:			ARobot
+
+Description:	This is where the Robot is initialized. This method is called before the Engine
+				is fully initialized and it creates and initialize every static mesh for the
+				Robot as well as each system.
+
+Parameters:		Nothing.
+
+Returns:		Nothing.
+
+Note: IF ANYTHING CHANGE IN THE CONSTRUCTOR OF THIS CLASS, THE ENGINE MUST BE RESTARTED TO SEE
+THE CHANGE. FAILING TO DO SO WILL RESULT IN SEEING WEIRD RESULT OF WHAT YOU ARE TRYING TO DO OR 
+THE ENGINE WILL SIMPLY CRASH.
+***********************************************************************************************/
 ARobot::ARobot()
 {
  	// Set this pawn to call Tick() every frame except when the game is paused and before BeginPlay() method is called. 
@@ -139,7 +149,20 @@ ARobot::ARobot()
 	CameraComponent->SetWorldRotation(FRotator(-90.0f, 0.0f, 0.0f));
 }
 
-// Called when the game starts or when spawned
+/***********************************************************************************************
+
+Mehtod:			BeginPlay
+
+Description:	This method is called by the Engine right after the constructor. It initialized
+				what couldn't be initialized in the constructor due to the Engine not behing
+				fully initialized.
+
+Parameters:		Nothing.
+
+Returns:		Nothing.
+
+Note:			Nothing.
+***********************************************************************************************/
 void ARobot::BeginPlay()
 {
 	Super::BeginPlay();
@@ -188,47 +211,110 @@ void ARobot::BeginPlay()
 	EnergySystem = NewObject<UEnergySystem>(this, UEnergySystem::StaticClass());
 }
 
+/***********************************************************************************************
+
+Mehtod:			SetRobotName
+
+Description:	This method set the name of the Robot. Student will call this in their BeginPlay
+				method.
+
+Parameters:		FString RobotNewName	-The name of the Robot.
+
+Returns:		Nothing.
+
+Note:			Nothing.
+***********************************************************************************************/
 void ARobot::SetRobotName(FString RobotNewName)
 {
 	RobotName = RobotNewName;
 }
 
+/***********************************************************************************************
+
+Mehtod:			SetStatusMessage
+
+Description:	This method set the status message displayed on the UI for this Robot.
+
+Parameters:		char* Message	-The message to be displayed on the UI.
+
+Returns:		Nothing.
+
+Note:			Nothing.
+***********************************************************************************************/
 void ARobot::SetStatusMessage(char* Message)
 {
 	StatusMessage =  Message;
 }
 
+/***********************************************************************************************
+
+Mehtod:			GetRandomNumber
+
+Description:	This method set the status message displayed on the UI for this Robot.
+
+Parameters:		int32 UpperBound
+
+Returns:		float	-Random float between 0 and UpperBound.
+
+Note:			Nothing.
+***********************************************************************************************/
 float ARobot::GetRandomNumber(int32 UpperBound)
 {
 	return FMath::RandRange(0, UpperBound);
 }
 
-// A method for the Robot to set each thread speed so the Player can set his speed.
-void ARobot::SetMotorSpeeds(int32 LeftThread, int32 RightThread)
+/***********************************************************************************************
+
+Mehtod:			SetMotorSpeeds
+
+Description:	This method set the speed of each Tread.
+
+Parameters:		int32 LeftTread		-The speed of the left tread
+				int32 RightTread	-The speed of the right tread
+
+Returns:		Nothing.
+
+Note:			Nothing.
+***********************************************************************************************/
+void ARobot::SetMotorSpeeds(int32 LeftTread, int32 RightTread)
 {
-	if (LeftThread < MIN_THREAH_SPEED)
+	if (LeftTread < MIN_TREAD_SPEED)
 	{
-		LeftThread = MIN_THREAH_SPEED;
+		LeftTread = MIN_TREAD_SPEED;
 	}
-	else if (LeftThread > MAX_TREAD_SPEED)
+	else if (LeftTread > MAX_TREAD_SPEED)
 	{
-		LeftThread = MAX_TREAD_SPEED;
+		LeftTread = MAX_TREAD_SPEED;
 	}
 
-	if (RightThread < MIN_THREAH_SPEED)
+	if (RightTread < MIN_TREAD_SPEED)
 	{
-		RightThread = MIN_THREAH_SPEED;
+		RightTread = MIN_TREAD_SPEED;
 	}
-	else if (RightThread > MAX_TREAD_SPEED)
+	else if (RightTread > MAX_TREAD_SPEED)
 	{
-		RightThread = MAX_TREAD_SPEED;
+		RightTread = MAX_TREAD_SPEED;
 	}
 	
 
-	LeftTreadSpeed = LeftThread;
-	RightTreadSpeed = RightThread;
+	LeftTreadSpeed = LeftTread;
+	RightTreadSpeed = RightTread;
 }
 
+/***********************************************************************************************
+
+Mehtod:			TurboBoost
+
+Description:	This method activate the boost. It set a timer to call the TurnBoosOff method
+				after TURBO_TIME secondes.
+
+Parameters:		Nothing.
+
+Returns:		int32	- 1 if the Turbo has been turned on correctly.
+						- 0 if the Turbo hasn't been turned on.
+
+Note:			Nothing.
+***********************************************************************************************/
 int32 ARobot::TurboBoost()
 {
 	if (EnergySystem->GetSystemEnergy(SYSTEM_SHIELDS) >= TURBO_ENERGY_COST)
@@ -242,42 +328,62 @@ int32 ARobot::TurboBoost()
 	return 0;
 }
 
+/***********************************************************************************************
+
+Mehtod:			IsTurboOn
+
+Description:	This method return the status of the TurboBoost.
+
+Parameters:		Nothing.
+
+Returns:		int32	- 0 if Turbo is OFF
+				int32	- 1 if Turbo is ON.
+
+Note:			Nothing.
+***********************************************************************************************/
 int32 ARobot::IsTurboOn()
 {
 	return TurboOn;
 }
 
+/***********************************************************************************************
+
+Mehtod:			FireWeapon
+
+Description:	This method is called when a Student want to fire any kind of weapon. The
+				heading is based on the forward direction of the Robot.
+
+Parameters:		WEAPONTYPE type		- Which weapon do you want to fire.
+				int32 heading		- The direction at which the projectile will be fired.
+
+Returns:		Nothing.
+
+Note:			Nothing.
+***********************************************************************************************/
 void ARobot::FireWeapon(WEAPONTYPE type, int32 heading)
 {
+	float Damage = 0;
 	heading = heading % 360;
 
 	switch (type)
 	{
 	case WEAPON_MISSILE:
-		if (true)
+		if ((Damage = EnergySystem->GetWeaponDamage(WEAPON_MISSILE)) > 0)
 		{
-			float MissileDamage = 0;
-			if ((MissileDamage = EnergySystem->GetWeaponDamage(WEAPON_MISSILE)) > 0)
+			if (heading >= -MISSILE_MAX_ANGLE && heading <= MISSILE_MAX_ANGLE)
 			{
-				if (heading >= -MISSILE_MAX_ANGLE && heading <= MISSILE_MAX_ANGLE)
-				{
-					FRotator MissileHeading = RobotDirection->GetComponentRotation();
-					MissileHeading.Yaw += heading;
-					MissileSystem->Fire(this, GetActorLocation(), MissileHeading, MissileDamage);
-				}
+				FRotator MissileHeading = RobotDirection->GetComponentRotation();
+				MissileHeading.Yaw += heading;
+				MissileSystem->Fire(this, GetActorLocation(), MissileHeading, Damage);
 			}
 		}
 		break;
 	case WEAPON_LASER:
-		if (true)
+		if ((Damage = EnergySystem->GetWeaponDamage(WEAPON_LASER)) > 0)
 		{
-			float LaserDamage = 0;
-			if ((LaserDamage = EnergySystem->GetWeaponDamage(WEAPON_LASER)) > 0)
-			{
-					FRotator LaserHeading = RobotDirection->GetComponentRotation();
-				LaserHeading.Yaw += heading;
-				LaserSystem->Fire(this, GetActorLocation(), LaserHeading, LaserDamage);
-			}
+				FRotator LaserHeading = RobotDirection->GetComponentRotation();
+			LaserHeading.Yaw += heading;
+			LaserSystem->Fire(this, GetActorLocation(), LaserHeading, Damage);
 		}
 		break;
 	default:
@@ -285,32 +391,125 @@ void ARobot::FireWeapon(WEAPONTYPE type, int32 heading)
 	}
 }
 
-int32 ARobot::GetGeneratorStructur()
+/***********************************************************************************************
+
+Mehtod:			GetGeneratorStructure
+
+Description:	This method get the remaining Structure Point from the Generator of the Robot.
+
+Parameters:		Nothing.
+
+Returns:		int32	- The remaining Structure Point
+
+Note:			Nothing.
+***********************************************************************************************/
+int32 ARobot::GetGeneratorStructure()
 {
-	return EnergySystem->GetGeneratorStructur();
+	return EnergySystem->GetGeneratorStructure();
 }
 
+/***********************************************************************************************
+
+Mehtod:			GetGeneratorOutput
+
+Description:	This method get the Energy Point generated by the Generator each minute.
+
+Parameters:		Nothing.
+
+Returns:		int32	- The number of Energy Point generated.
+
+Note:			Nothing.
+
+//TODO Check the int32-float conversion.
+***********************************************************************************************/
 int32 ARobot::GetGeneratorOutput()
 {
 	return EnergySystem->GetGeneratorOutput();
 }
 
+/***********************************************************************************************
+
+Mehtod:			SetSystemChargePriorites
+
+Description:	This method set the priority of the different system to be alocated Energy Point
+				each turn. The first element is the top priority. It can be change at any moment
+				by the Student.
+
+Parameters:		SYSTEM priorities[NUM_ENERGY_SYSTEMS]	- An array of the different system.
+														
+Returns:		int32	- 1 if the assignation of the SYSTEM has been made correctly.
+						(Right size, no duplicate, ...)
+						- 0 if there is an error with the assignation.
+
+Note:			Nothing.
+***********************************************************************************************/
 int32 ARobot::SetSystemChargePriorites(SYSTEM priorities[NUM_ENERGY_SYSTEMS])
 {
 	return EnergySystem->SetSystemChargePriorites(priorities);
 }
 
+/***********************************************************************************************
 
+Mehtod:			GetSystemEnergy
+
+Description:	This method get the Energy Point stored by the desired SYSTEM.
+
+Parameters:		SYSTEM type		- The SYSTEM to get the Energy Point.
+
+Returns:		float	- The Energy Point stored in the SYSTEM.
+
+Note:			Nothing.
+***********************************************************************************************/
 float ARobot::GetSystemEnergy(SYSTEM type)
 {
 	return EnergySystem->GetSystemEnergy(type);
 }
 
+/***********************************************************************************************
+
+Mehtod:			SetSystemChargeRate
+
+Description:	This method set the max number of Energy Point to be assigned to the specified 
+				SYSTEM.
+
+Parameters:		SYSTEM type		- The SYSTEM to set the Energy Point charge rate.
+				int32 rate		- The rate at which the SYSTEM will be charged.
+
+Returns:		Nothing.
+
+Note:			Nothing.
+***********************************************************************************************/
 void ARobot::SetSystemChargeRate(SYSTEM type, int32 rate)
 {
 	EnergySystem->SetSystemChargeRate(type, rate);
 }
 
+/***********************************************************************************************
+
+Mehtod:			AddSensor
+
+Description:	This method add a Sensor to the Robot. The Student can set the angle, the width
+				and the range of the sensor. The method load a StaticMesh into an already
+				initialized StaticMeshComponent. The default StaticMesh is the biggest size
+				it the Sensor can be and it's scalled down depending on the parameter.
+
+Parameters:		int32 port			- The port of the Sensor.
+				SENSORTYPE type		- The type of Sensor to be installed on the Robot.
+				int32 angle			- The azimuth of the Sensor. 0 is forward.
+				int32 width			- The width of the RADAR. No effect for the RANGE Sensor.
+				int32 range			- The maximum range of the Sensor.
+
+Returns:		int32		- 1 if the Sensor has been add correctly to the Robot.
+							- 0 if there was an error while installing the Sensor.
+
+Note:			- Right now Sensors are UStaticMeshComponent but in a futur version might
+				become AActor. AActor are easier to work with since now I have to keep an
+				SensorSystem array and a SensorMeshArray to make it work. There is also a
+				bug in the Engine where I can't render a UStaticMeshComponent from an
+				outside class on the Robot. This is why I have 2 array. Should be fixed
+				with Engine version 4.22 but the bug shouldn't mater after the change to
+				AActor.
+***********************************************************************************************/
 int32 ARobot::AddSensor(int32 port, SENSORTYPE type, int32 angle, int32 width, int32 range)
 {
 	float TrueWidth = width;
@@ -375,6 +574,23 @@ int32 ARobot::AddSensor(int32 port, SENSORTYPE type, int32 angle, int32 width, i
 	return 0;
 }
 
+/***********************************************************************************************
+
+Mehtod:			GetSensorData
+
+Description:	This method get the data from the Sensor.
+
+Parameters:		int32 port		- The port to get the data.
+
+Returns:		int32		RADAR	- 1 if a Robot is in the RADAR Sensor.
+									- 0 if there's no Robot in the RADAR.
+							RANGE	- The distance in UnrealUnit between the middle of the Robot
+									and the end of the Sensor.
+
+							- -1 if there is no Sensor at the port.
+
+Note:			Nothing.
+***********************************************************************************************/
 int32 ARobot::GetSensorData(int32 port)
 {
 	if (SensorArray[port])
@@ -387,6 +603,20 @@ int32 ARobot::GetSensorData(int32 port)
 	}
 }
 
+/***********************************************************************************************
+
+Mehtod:			SetSensorStatus
+
+Description:	This method turn ON or OFF the Sesnor at the desired port.
+
+Parameters:		int32 port		- Port to change status.
+				int32 status	- 1 to turn the Sensor ON.
+								- 0 to turn the Sensor OFF.
+
+Returns:		Nothing.
+
+Note:			Nothing.
+***********************************************************************************************/
 void ARobot::SetSensorStatus(int32 port, int32 status)
 {
 	if (SensorArray[port])
@@ -402,6 +632,22 @@ void ARobot::SetSensorStatus(int32 port, int32 status)
 	}
 }
 
+/***********************************************************************************************
+
+Mehtod:			GetBumpInfo
+
+Description:	This method get the Bumb information since last asked and return it to the Student.
+
+Parameters:		Nothing.
+
+Returns:		int32		- An int32 of the bumb information
+							BUMP_WALL			0x01
+							BUMP_ROBOT			0x02
+							BUMP_MISSILE		0x04
+							BUMP_LASER			0x08
+
+Note:			Nothing.
+***********************************************************************************************/
 int32 ARobot::GetBumpInfo()
 {
 	int32 temp = BumpInfo;
@@ -409,6 +655,21 @@ int32 ARobot::GetBumpInfo()
 	return temp;
 }
 
+/***********************************************************************************************
+
+Mehtod:			GetGPSInfo
+
+Description:	This method give the position of the Robot in the arena. the center of the
+				arena is the (0, 0) point.
+
+Parameters:		Nothing.
+
+Returns:		GPS_INFO	- The (X, Y) coordinate of the Robot on the arena and the azimuth
+							it's facing.
+							- Return all 0's if there is not enough Energy Point to use the GPS.
+
+Note:			Nothing.
+***********************************************************************************************/
 GPS_INFO ARobot::GetGPSInfo()
 {
 	FVector temp = GetActorLocation();
@@ -433,7 +694,29 @@ GPS_INFO ARobot::GetGPSInfo()
 	return GPSInfo;
 }
 
+/***********************************************************************************************
+
+Mehtod:			MoveRobot
+
+Description:	This method move the Robot depending on the Treads speed set by the Student. It
+				is executed in the following order.
+					1- Check if there is a recoil to apply and applies it.
+					2- Check if the TurboBoost is ON and add the speed if it is.
+					3- Calculate the futur position and the futur heading of the Robot based on
+						the treads speed.
+					4- Check if the Robot will collide with another Robot, apply recoil and
+						damage if it's the case.
+					5- Move and turn the Robot.
+
+Parameters:		float DeltaTime		- The number of seconds between THIS frame and the LAST frame.
+
+Returns:		Nothing.
+
+Note:			Nothing.
+
 //TODO The Robot is turning super quickly when one of the thread is negative. Might want to slow it down.
+
+***********************************************************************************************/
 void ARobot::MoveRobot(float DeltaTime)
 {
 	//Initializing initial variable so they can be used even if they don't change.
@@ -634,7 +917,19 @@ void ARobot::MoveRobot(float DeltaTime)
 	SetActorLocation(FuturPosition);
 }
 
+/***********************************************************************************************
 
+Mehtod:			UpdateSensor
+
+Description:	This method check each Sensor for collision, update their data and their position
+				in the RANGE Sensor case.
+
+Parameters:		Nothing.
+
+Returns:		Nothing.
+
+Note:			Nothing.
+***********************************************************************************************/
 void ARobot::UpdateSensor()
 {
 	for (int32 i = 0; i < MAX_SENSORS; i++)
@@ -700,6 +995,19 @@ void ARobot::UpdateSensor()
 	}
 }
 
+/***********************************************************************************************
+
+Mehtod:			UpdateEnergy
+
+Description:	This method allocate the Energy Point to each of the System and then Update the
+				Shield opacity based on the Energy Point stored in the Shield SYSTEM.
+
+Parameters:		float DeltaTime		- The number of seconds between THIS frame and the LAST frame.
+
+Returns:		Nothing.
+
+Note:			Nothing.
+***********************************************************************************************/
 void ARobot::UpdateEnergy(float DeltaTime)
 {
 	EnergySystem->UpdateEnergySystem(DeltaTime, this);
@@ -707,7 +1015,21 @@ void ARobot::UpdateEnergy(float DeltaTime)
 }
 
 
+/***********************************************************************************************
+
+Mehtod:			UpdateShield
+
+Description:	This method update the opacity of the Shield SYSTEM based on the Energy Points
+				stored.
+
+Parameters:		Nothing.
+
+Returns:		Nothing.
+
+Note:			Nothing.
+
 //TODO Test shield transparency value. 0.8f seems a little bit too much.
+***********************************************************************************************/
 void ARobot::UpdateShield()
 {
 	if ((EnergySystem->GetSystemEnergy(SYSTEM_SHIELDS) / SHIELDS_LEAK_THRESHOLD) < 1.0f)
@@ -722,11 +1044,46 @@ void ARobot::UpdateShield()
 	}
 }
 
+/***********************************************************************************************
+
+Mehtod:			TurnBoosOff
+
+Description:	This method is called after the the TurboBoostTimer is expired and turn the
+				Turbo Boost OFF.
+
+Parameters:		Nothing.
+
+Returns:		Nothing.
+
+Note:			- Not tested yet but, if the Robot is Destroyed while the TurboBoost is ON, it
+					might crash the Engine since it won't be able to call the Method on a
+					destroyed Object.
+***********************************************************************************************/
 void ARobot::TurnBoosOff()
 {
 	TurboOn = 0;
 }
 
+/***********************************************************************************************
+
+Mehtod:			RadarOverlap
+
+Description:	This method is called by the Engine each time something overlap the RADAR
+				Sensors. It find the right Sensor, check if the overlapping Object is a Robot, 
+				check if it's itself then adjust the data of the Sensor.
+
+Parameters:		UPrimitiveComponent * OverlappedComponent		- A pointer to the overlapped component
+				AActor * OtherActor								- A pointer to the AActor overlapping
+				UPrimitiveComponent * OtherComp					- A pointer to the Component overlapping
+				int32 OtherBodyIndex							- Don't know
+				bool bFromSweep									- Don't know
+				const FHitResult & SweepResult					- Don't know
+
+Returns:		Nothing.
+
+Note:			- The signature have to be this else it can't be called by the Engine. It
+					sometimes change with Engine update.
+***********************************************************************************************/
 void ARobot::RadarOverlap(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
 	//Check if the AActor overlaping is a Robot.
@@ -751,6 +1108,24 @@ void ARobot::RadarOverlap(UPrimitiveComponent * OverlappedComponent, AActor * Ot
 	}
 }
 
+/***********************************************************************************************
+
+Mehtod:			RadarOverlapEnd
+
+Description:	This method is called by the Engine everytime there is an Object exiting a RADAR
+				Sensor. This method make sure there's nothing overlapping it before changing the
+				Sensor data.
+
+Parameters:		UPrimitiveComponent * OverlappedComponent		- A pointer to the overlapped component
+				AActor * OtherActor								- A pointer to the AActor overlapping
+				UPrimitiveComponent * OtherComp					- A pointer to the Component overlapping
+				int32 OtherBodyIndex							- Don't know
+
+Returns:		Nothing.
+
+Note:			- The signature have to be this else it can't be called by the Engine. It
+					sometimes change with Engine update.
+***********************************************************************************************/
 void ARobot::RadarOverlapEnd(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex)
 {
 	//Iterate through all Sensor to find the overlapping Sensor
@@ -793,6 +1168,19 @@ void ARobot::RadarOverlapEnd(UPrimitiveComponent * OverlappedComponent, AActor *
 	}
 }
 
+/***********************************************************************************************
+
+Mehtod:			Tick
+
+Description:	This method is called every frame by the Engine. Every Object that can Tick has
+				this method and it's ALWAYS called each frame.
+
+Parameters:		float DeltaTime		- The number of seconds between THIS frame and the LAST frame.
+
+Returns:		Nothing.
+
+Note:			Nothing.
+***********************************************************************************************/
 // Called every frame
 void ARobot::Tick(float DeltaTime)
 {
@@ -804,6 +1192,11 @@ void ARobot::Tick(float DeltaTime)
 
 }
 
+/***********************************************************************************************
+
+
+Note:			This method will be gone when ARobot becomes an AActor instead of APawn.
+***********************************************************************************************/
 // Called to bind functionality to input
 void ARobot::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -811,12 +1204,37 @@ void ARobot::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 }
 
+/***********************************************************************************************
+
+Mehtod:			SetRobotColor
+
+Description:	This method set the Robot collor.
+
+Parameters:		FLinearColor color		- An RGBA representation of a collor.
+
+Returns:		Nothing.
+
+Note:			Nothing.
+***********************************************************************************************/
 void ARobot::SetRobotColor(FLinearColor color)
 {
 	RobotColor = color;
 }
 
+/***********************************************************************************************
 
+Mehtod:			GetHit
+
+Description:	This method is called when something hit the Robot. It first adjust the BumpData
+				and then deal damage to the Robot.
+
+Parameters:		DAMAGETYPE DamageType		- The type of damage dealt to the Robot.
+				float DamageValue			- The damage taken by the Robot.
+
+Returns:		Nothing.
+
+Note:			Nothing.
+***********************************************************************************************/
 void ARobot::GetHit(DAMAGETYPE DamageType, float DamageValue)
 {
 	switch (DamageType)
@@ -847,11 +1265,36 @@ void ARobot::GetHit(DAMAGETYPE DamageType, float DamageValue)
 	UE_LOG(LogTemp, Warning, TEXT("%s got hit for %f damage"), *GetName(), DamageValue)
 }
 
-USensorSystem* ARobot::GetSensor(int index)
+/***********************************************************************************************
+
+Mehtod:			GetSensor
+
+Description:	This method return the reference to the Sensor at Port index.
+
+Parameters:		int32 index		- The port of the desired Sensor.
+
+Returns:		Nothing.
+
+Note:			Nothing.
+***********************************************************************************************/
+USensorSystem* ARobot::GetSensor(int32 index)
 {
 	return SensorArray[index];
 }
 
+/***********************************************************************************************
+
+Mehtod:			GetRobotSpeed
+
+Description:	This method return the speed of the Robot. The speed is calculated in MoveRobot()
+				by getting the distance traveled by the Robot during DeltaTime.
+
+Parameters:		Nothing.
+
+Returns:		float		- The speed of the robot.
+
+Note:			Nothing.
+***********************************************************************************************/
 float ARobot::GetRobotSpeed()
 {
 	return RobotSpeed;

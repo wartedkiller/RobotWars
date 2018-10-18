@@ -11,7 +11,7 @@
 #include "Robot.generated.h"
 
 #define MAX_TREAD_SPEED			100.0f
-#define MIN_THREAH_SPEED		-100.0f
+#define MIN_TREAD_SPEED		-100.0f
 #define MAX_SPEED				100.0f				//In UnrealUnit/s
 #define TREAD_DISTANCE			15.0f
 #define TURBO_ENERGY_COST		100
@@ -40,7 +40,7 @@ public:
 
 	void SetRobotColor(FLinearColor color);
 	void GetHit(DAMAGETYPE DamageType, float DamageValue);
-	USensorSystem* GetSensor(int index);
+	USensorSystem* GetSensor(int32 index);
 
 	float GetRobotSpeed();
 
@@ -63,7 +63,7 @@ protected:
 	void FireWeapon(WEAPONTYPE type, int32 heading);
 
 	//EnergySystem methods
-	int32 GetGeneratorStructur();
+	int32 GetGeneratorStructure();
 	int32 GetGeneratorOutput();
 	int32 SetSystemChargePriorites(SYSTEM priorities[NUM_ENERGY_SYSTEMS]);
 	float GetSystemEnergy(SYSTEM type);
