@@ -5,7 +5,6 @@
 #include "Components/ArrowComponent.h"
 #include "Camera/CameraComponent.h"
 #include "RobotWarsStatics.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "Engine/World.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/LineBatchComponent.h"
@@ -53,14 +52,14 @@ ARobot::ARobot()
 	//Creating the Robot debug UArrowComponent. It will not render in the final game
 	//but it will still help keeping track of the direction of the Robot.
 	RobotDirection = CreateDefaultSubobject<UArrowComponent>(TEXT("RobotDirection"));
-	RobotDirection->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+	RobotDirection->SetupAttachment(RootComponent);
 	
 	//Creating the default Robot sprite.
 	//NOTE: Paper2D is an abandon ware in Unreal 4. While it will always be
 	//in the Engine, it won't receive future upgrade. A solution to this is
 	//using a 3D plane like it's done for the shield.
 	RobotMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RobotMesh"));
-	RobotMesh->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
+	RobotMesh->SetupAttachment(RobotDirection);
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> RobotVisualAsset(TEXT("StaticMesh'/Game/Mesh/Robot.Robot'"));
 	if (RobotVisualAsset.Succeeded())
 	{
@@ -75,12 +74,12 @@ ARobot::ARobot()
 	//Creating the UCapsuleComponent used for collision. Since it's a 2D game, the Z position (height)
 	//of the Robots is not important. That's why the Capsule is 200 unit high.
 	RobotCollisionCapsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RobotCollisionCapsule"));
-	RobotCollisionCapsule->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
+	RobotCollisionCapsule->SetupAttachment(RobotDirection);
 	RobotCollisionCapsule->InitCapsuleSize(25.0f, 200.0f); 
 
 	//Creating the UStaticMeshComponent for the Shield.
 	RobotShield = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RobotShield"));
-	RobotShield->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
+	RobotShield->SetupAttachment(RobotDirection);
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> ShieldVisualAsset(TEXT("StaticMesh'/Game/Mesh/Shield.Shield'"));
 	if (ShieldVisualAsset.Succeeded())
 	{
@@ -117,36 +116,16 @@ ARobot::ARobot()
 
 	//Initializing Sensors
 	SensorMeshArray[0] = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SensorMesh0"));
-	SensorMeshArray[0]->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
+	SensorMeshArray[0]->SetupAttachment(RobotDirection);
 	SensorMeshArray[1] = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SensorMesh1"));
-	SensorMeshArray[1]->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
+	SensorMeshArray[1]->SetupAttachment(RobotDirection);
 	SensorMeshArray[2] = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SensorMesh2"));
-	SensorMeshArray[2]->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
+	SensorMeshArray[2]->SetupAttachment(RobotDirection);
 	SensorMeshArray[3] = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SensorMesh3"));
-	SensorMeshArray[3]->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
+	SensorMeshArray[3]->SetupAttachment(RobotDirection);
 
 	RobotCollisionProfile = TEXT("Robot");
 
-	//This will be remove and placed in the spectator.
-	///If something is changed to the SpringArm or the CameraComponent, you must restart UE4
-	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
-	SpringArm->TargetArmLength = 500.0f;
-	SpringArm->bEnableCameraLag = true;
-	SpringArm->bEnableCameraRotationLag = false;
-	SpringArm->bUsePawnControlRotation = false;
-	SpringArm->CameraLagSpeed = 2.0f;
-	SpringArm->bDoCollisionTest = false;
-	SpringArm->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
-	SpringArm->SetWorldRotation(FRotator(-90.0f, 0.0f, 0.0f));
-
-	//This will be remove and placed in the spectator.
-	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("RobotCamera"));
-	CameraComponent->bUsePawnControlRotation = false;
-	CameraComponent->ProjectionMode = ECameraProjectionMode::Orthographic;
-	CameraComponent->OrthoWidth = 1024.0f;
-	CameraComponent->AspectRatio = 4.0f / 3.0f;
-	CameraComponent->AttachToComponent(SpringArm, FAttachmentTransformRules::KeepWorldTransform, SpringArm->SocketName);
-	CameraComponent->SetWorldRotation(FRotator(-90.0f, 0.0f, 0.0f));
 }
 
 /***********************************************************************************************
@@ -200,7 +179,8 @@ void ARobot::BeginPlay()
 		SensorArray[i] = NewObject<USensorSystem>(this, USensorSystem::StaticClass());
 		SensorArray[i]->RegisterComponent();
 		SensorArray[i]->SetWorldLocation(RobotDirection->GetComponentLocation());
-		SensorArray[i]->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
+		SensorArray[i]->SetupAttachment(RobotDirection);
+		///SensorArray[i]->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
 	}
 
 	//This is a test to try and solve the problem with the MissileSystem.
@@ -552,7 +532,7 @@ int32 ARobot::AddSensor(int32 port, SENSORTYPE type, int32 angle, int32 width, i
 			{
 				FString MeshPath = TEXT("StaticMesh'/Game/Mesh/RadarSensor.RadarSensor'");
 				SensorMeshArray[port]->SetStaticMesh(Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), NULL, *MeshPath)));
-				SensorMeshArray[port]->SetWorldRotation(FRotator(0.0f, angle, 0.0f));
+				SensorMeshArray[port]->SetWorldRotation(FRotator(0.0f, RobotDirection->GetComponentRotation().Yaw + angle, 0.0f));
 				SensorMeshArray[port]->SetWorldScale3D(FVector(TrueRange / RADAR_MAX_RANGE, TrueWidth / MAX_RADAR_ARC, 1.0f));
 				SensorMeshArray[port]->SetCollisionProfileName(TEXT("RadarSensor"));
 				SensorMeshArray[port]->OnComponentBeginOverlap.AddDynamic(this, &ARobot::RadarOverlap);
@@ -1189,18 +1169,6 @@ void ARobot::Tick(float DeltaTime)
 	UpdateEnergy(DeltaTime);
 	MoveRobot(DeltaTime);
 	UpdateSensor();
-
-}
-
-/***********************************************************************************************
-
-
-Note:			This method will be gone when ARobot becomes an AActor instead of APawn.
-***********************************************************************************************/
-// Called to bind functionality to input
-void ARobot::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 }
 

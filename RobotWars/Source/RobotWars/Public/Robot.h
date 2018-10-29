@@ -23,7 +23,7 @@
 
 
 UCLASS()
-class ROBOTWARS_API ARobot : public APawn
+class ROBOTWARS_API ARobot : public AActor
 {
 	GENERATED_BODY()
 
@@ -35,8 +35,6 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	void SetRobotColor(FLinearColor color);
 	void GetHit(DAMAGETYPE DamageType, float DamageValue);
@@ -152,14 +150,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 		class UMissileSystem* MissileSystem;
-
-	//The in Development Camera - Should be remove and put in an observer in final version
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
-		class UCameraComponent* CameraComponent;
-	
-	//The in Development Springarm - Should be remove and put in an observer in final version
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
-		class USpringArmComponent* SpringArm;
 
 	UPROPERTY(VisibleAnywhere, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 		UStaticMeshComponent* SensorMeshArray[MAX_SENSORS];

@@ -25,7 +25,7 @@ void ATestRobot::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetMotorSpeeds(0, 0);
+	SetMotorSpeeds(50, 50);
 
 	SetSystemChargeRate(SYSTEM_SHIELDS, 600);
 	SetSystemChargeRate(SYSTEM_LASERS, 200);

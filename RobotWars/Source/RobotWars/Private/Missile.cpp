@@ -27,10 +27,10 @@ AMissile::AMissile()
 	}
 
 	MissileDirection = CreateDefaultSubobject<UArrowComponent>(TEXT("MissileDirection"));
-	MissileDirection->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+	MissileDirection->SetupAttachment(RootComponent);
 
 	MissileSprite = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("MissileSprite"));
-	MissileSprite->AttachToComponent(MissileDirection, FAttachmentTransformRules::KeepWorldTransform);
+	MissileSprite->SetupAttachment(MissileDirection);
 
 	MovementCollisionProfile = TEXT("Projectile:Fly");
 

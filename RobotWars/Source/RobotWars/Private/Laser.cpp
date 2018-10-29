@@ -21,10 +21,10 @@ ALaser::ALaser()
 	}
 
 	LaserDirection = CreateDefaultSubobject<UArrowComponent>(TEXT("LaserDirection"));
-	LaserDirection->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+	LaserDirection->SetupAttachment(RootComponent);
 
 	LaserSprite = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("LaserSprite"));
-	LaserSprite->AttachToComponent(LaserDirection, FAttachmentTransformRules::KeepWorldTransform);
+	LaserSprite->SetupAttachment(LaserDirection);
 
 	MovementCollisionProfile = TEXT("Projectile:Fly");
 
