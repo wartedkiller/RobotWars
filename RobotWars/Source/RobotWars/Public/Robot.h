@@ -35,8 +35,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-
-	void SetRobotColor(FLinearColor color);
+	UFUNCTION(BlueprintCallable, Category = "Robot")
+		void SetRobotColor(FLinearColor color);
 	void GetHit(DAMAGETYPE DamageType, float DamageValue);
 	USensorSystem* GetSensor(int32 index);
 
@@ -80,6 +80,7 @@ private:
 	void UpdateSensor();
 	void UpdateEnergy(float DeltaTime);
 	void UpdateShield();
+	void UpdateInformation();
 
 	UFUNCTION()
 	void TurnBoosOff();
@@ -94,8 +95,38 @@ private:
 ///********** VARIABLE **************************************************************************************************************************************************
 
 public:
-	FString RobotName = TEXT("DEFAULT");
-	FString StatusMessage = TEXT("NO STATUS MESSAGE");
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
+		FString RobotName = TEXT("DEFAULT");
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
+		FString StatusMessage = TEXT("NO STATUS MESSAGE");
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
+		float Score;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
+		float CurrentGeneratorCapacity;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
+		float CurrentShieldCharge;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
+		float CurrentMissileCharge;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
+		float CurrentLaserCharge;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
+		float MaxGeneratorCapacity;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
+		float MaxShieldCharge;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
+		float MaxMissileCharge;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
+		float MaxLaserCharge;
 
 	UPROPERTY(VisibleAnywhere, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 	USensorSystem* SensorArray[MAX_SENSORS];
@@ -133,7 +164,9 @@ private:
 	class UMaterialInstanceDynamic* RadarSensorMaterial;
 	class UMaterial* RangeSensorMaterialHelper;
 	class UMaterialInstanceDynamic* RangeSensorMaterial;
-	FLinearColor RobotColor;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
+		FLinearColor RobotColor = FLinearColor::White;
 
 	//The Robot collision capsule
 	UPROPERTY(VisibleAnywhere, Category = "Robot")

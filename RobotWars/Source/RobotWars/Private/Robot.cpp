@@ -90,28 +90,18 @@ ARobot::ARobot()
 		UE_LOG(LogTemp, Warning, TEXT("Could not load static mesh for the Shield"))
 	}
 
-	//Loading the Shield material to be used in the BeginPlay() method.
+	//Loading the materials to be used in the BeginPlay() method.
 	static ConstructorHelpers::FObjectFinder<UMaterial> ShieldMaterialGetter(TEXT("Material'/Game/Material/ShieldMaterial.ShieldMaterial'"));
-	if (ShieldMaterialGetter.Succeeded())
+	static ConstructorHelpers::FObjectFinder<UMaterial> RangeSensorMaterialGetter(TEXT("Material'/Game/Material/RangeSensorMaterial_MAT.RangeSensorMaterial_MAT'"));
+	if (ShieldMaterialGetter.Succeeded() && RangeSensorMaterialGetter.Succeeded())
 	{
 		ShieldMaterialHelper = ShieldMaterialGetter.Object;
 		RadarSensorMaterialHelper = ShieldMaterialGetter.Object;
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Could not load the Shield material."))
-	}
-
-	//Loading the RangeSensor material to be used in the BeginPlay() method.
-	static ConstructorHelpers::FObjectFinder<UMaterial> RangeSensorMaterialGetter(TEXT("Material'/Game/Material/RangeSensorMaterial_MAT.RangeSensorMaterial_MAT'"));
-	if (RangeSensorMaterialGetter.Succeeded())
-	{
-
 		RangeSensorMaterialHelper = RangeSensorMaterialGetter.Object;
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Could not load the RangeSensor material."))
+		UE_LOG(LogTemp, Warning, TEXT("Could not load the Shield material."))
 	}
 
 	//Initializing Sensors
@@ -145,33 +135,25 @@ Note:			Nothing.
 void ARobot::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	//Temporary call of SetRobotColor(). The final color will be set by the GameMode when the game begin.
-	SetRobotColor(FLinearColor::Blue);
 
-	//Creating a dynamic material so we can change the color (the opacity in our case) in real time.
-	//Also change the color of the shield and scales it to it's final size.
 	if (ShieldMaterialHelper)
 	{
 		ShieldMaterial = RobotShield->CreateDynamicMaterialInstance(0, ShieldMaterialHelper);
 		RobotShield->SetMaterial(0, ShieldMaterial);
+		RobotShield->SetWorldScale3D(FVector(1.0f));
 
 		ShieldMaterial->SetVectorParameterValue("ShieldColor", RobotColor);
-		RobotShield->SetWorldScale3D(FVector(1.0f));
 	}
-
 	if (RadarSensorMaterialHelper)
 	{
 		RadarSensorMaterial = SensorMeshArray[0]->CreateDynamicMaterialInstance(0, RadarSensorMaterialHelper);
 		RadarSensorMaterial->SetVectorParameterValue("ShieldColor", RobotColor);
 	}
-
 	if (RangeSensorMaterialHelper)
 	{
 		RangeSensorMaterial = SensorMeshArray[0]->CreateDynamicMaterialInstance(0, RangeSensorMaterialHelper);
 		RangeSensorMaterial->SetVectorParameterValue("SensorColor", RobotColor);
 	}
-
 	
 	//Initialize all Sensor to SENSOR_NONE.
 	for (int32 i = 0; i < MAX_SENSORS; i++)
@@ -179,8 +161,7 @@ void ARobot::BeginPlay()
 		SensorArray[i] = NewObject<USensorSystem>(this, USensorSystem::StaticClass());
 		SensorArray[i]->RegisterComponent();
 		SensorArray[i]->SetWorldLocation(RobotDirection->GetComponentLocation());
-		SensorArray[i]->SetupAttachment(RobotDirection);
-		///SensorArray[i]->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
+		SensorArray[i]->AttachToComponent(RobotDirection, FAttachmentTransformRules::KeepWorldTransform);
 	}
 
 	//This is a test to try and solve the problem with the MissileSystem.
@@ -189,6 +170,11 @@ void ARobot::BeginPlay()
 	LaserSystem = NewObject<ULaserSystem>(this, ULaserSystem::StaticClass());
 
 	EnergySystem = NewObject<UEnergySystem>(this, UEnergySystem::StaticClass());
+
+	MaxGeneratorCapacity = MAX_GENERATOR_STRUCTURE;
+	MaxShieldCharge = MAX_SHIELD_ENERGY;
+	MaxLaserCharge = MAX_LASER_ENERGY;
+	MaxMissileCharge = MAX_MISSILE_ENERGY;
 }
 
 /***********************************************************************************************
@@ -1026,6 +1012,29 @@ void ARobot::UpdateShield()
 
 /***********************************************************************************************
 
+Mehtod:			UpdateInformation
+
+Description:	This method is called every frame to update the Robot information. The UI can then
+				access this information and display it on screen.
+
+Parameters:		Nothing.
+
+Returns:		Nothing.
+
+Note:			- Not tested yet but, if the Robot is Destroyed while the TurboBoost is ON, it
+might crash the Engine since it won't be able to call the Method on a
+destroyed Object.
+***********************************************************************************************/
+void ARobot::UpdateInformation()
+{
+	CurrentGeneratorCapacity = EnergySystem->GetGeneratorStructure();
+	CurrentShieldCharge = EnergySystem->GetSystemEnergy(SYSTEM_SHIELDS);
+	CurrentLaserCharge = EnergySystem->GetSystemEnergy(SYSTEM_LASERS);
+	CurrentMissileCharge = EnergySystem->GetSystemEnergy(SYSTEM_MISSILES);
+}
+
+/***********************************************************************************************
+
 Mehtod:			TurnBoosOff
 
 Description:	This method is called after the the TurboBoostTimer is expired and turn the
@@ -1169,7 +1178,7 @@ void ARobot::Tick(float DeltaTime)
 	UpdateEnergy(DeltaTime);
 	MoveRobot(DeltaTime);
 	UpdateSensor();
-
+	UpdateInformation();
 }
 
 /***********************************************************************************************
@@ -1187,6 +1196,28 @@ Note:			Nothing.
 void ARobot::SetRobotColor(FLinearColor color)
 {
 	RobotColor = color;
+
+	if (ShieldMaterialHelper)
+	{
+		ShieldMaterial->SetVectorParameterValue("ShieldColor", RobotColor);
+	}
+
+	for (int32 i = 0; i < MAX_SENSORS; i++)
+	{
+		if (SensorArray[i]->GetTypeOfSensor() == SENSOR_RANGE) {
+			if (RangeSensorMaterialHelper)
+			{
+				RangeSensorMaterial->SetVectorParameterValue("SensorColor", RobotColor);
+			}
+		}
+		else if (SensorArray[i]->GetTypeOfSensor() == SENSOR_RADAR)
+		{
+			if (RadarSensorMaterialHelper)
+			{
+				RadarSensorMaterial->SetVectorParameterValue("ShieldColor", RobotColor);
+			}
+		}
+	}
 }
 
 /***********************************************************************************************
