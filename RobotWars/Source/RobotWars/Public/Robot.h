@@ -48,7 +48,7 @@ protected:
 
 	//Other methods
 	void SetRobotName(FString RobotNewName);
-	void SetStatusMessage(char* Message);
+	void SetStatusMessage(FString Message);
 	//void AbortOnError(FString Message);
 	float GetRandomNumber(int32 UpperBound);
 
@@ -81,6 +81,7 @@ private:
 	void UpdateEnergy(float DeltaTime);
 	void UpdateShield();
 	void UpdateInformation();
+	void KillThisRobot();
 
 	UFUNCTION()
 	void TurnBoosOff();
@@ -164,6 +165,9 @@ private:
 	class UMaterialInstanceDynamic* RadarSensorMaterial;
 	class UMaterial* RangeSensorMaterialHelper;
 	class UMaterialInstanceDynamic* RangeSensorMaterial;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
+		bool bIsAlive = true;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 		FLinearColor RobotColor = FLinearColor::White;

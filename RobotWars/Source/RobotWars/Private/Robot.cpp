@@ -207,7 +207,7 @@ Returns:		Nothing.
 
 Note:			Nothing.
 ***********************************************************************************************/
-void ARobot::SetStatusMessage(char* Message)
+void ARobot::SetStatusMessage(FString Message)
 {
 	StatusMessage =  Message;
 }
@@ -1035,6 +1035,26 @@ void ARobot::UpdateInformation()
 
 /***********************************************************************************************
 
+Mehtod:			KillThisRobot
+
+Description:	This method is called when the Robot generator is <= 0. It spawn the explosion,
+				set bIsAlive to flase and destroy the Object.
+
+Parameters:		Nothing.
+
+Returns:		Nothing.
+
+Note:			Nothing.
+***********************************************************************************************/
+void ARobot::KillThisRobot()
+{
+	//TODO Remove the Robot, play explosion.
+	bIsAlive = false;
+	this->Destroy();
+}
+
+/***********************************************************************************************
+
 Mehtod:			TurnBoosOff
 
 Description:	This method is called after the the TurboBoostTimer is expired and turn the
@@ -1179,6 +1199,7 @@ void ARobot::Tick(float DeltaTime)
 	MoveRobot(DeltaTime);
 	UpdateSensor();
 	UpdateInformation();
+
 }
 
 /***********************************************************************************************
@@ -1256,10 +1277,8 @@ void ARobot::GetHit(DAMAGETYPE DamageType, float DamageValue)
 
 	if (!EnergySystem->RemoveEnergy(DamageValue))
 	{
-		//TODO Remove the Robot, play explosion.
-		this->Destroy();
+		KillThisRobot();
 	}
-	UpdateShield();
 
 	UE_LOG(LogTemp, Warning, TEXT("%s got hit for %f damage"), *GetName(), DamageValue)
 }

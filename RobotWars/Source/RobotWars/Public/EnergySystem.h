@@ -50,7 +50,7 @@ public:
 	///********** VARIABLE **************************************************************************************************************************************************
 private:
 	float CurrentEnergy[NUM_ENERGY_SYSTEMS];
-	int32 CurrentGeneratorStructure;
+	float CurrentGeneratorStructure;
 	int32 EnergyChargeRatePerSecond[NUM_ENERGY_SYSTEMS];
 
 	TArray<SYSTEM> SystemPriority;

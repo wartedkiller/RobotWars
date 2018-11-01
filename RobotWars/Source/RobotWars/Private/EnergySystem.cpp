@@ -139,10 +139,11 @@ void UEnergySystem::UpdateEnergySystem(float DeltaTime, ARobot* robot)
 
 	float EnergyToSpendThisTurn = (CurrentGeneratorStructure / MAX_GENERATOR_STRUCTURE) * (GENERATOR_CAPACITY / 60) * DeltaTime;
 
+
 	for (SYSTEM CurrentSystem : SystemPriority)
 	{
 		//Stop giving energy if there is no energy to give.
-		if (EnergyToSpendThisTurn == 0)
+		if (EnergyToSpendThisTurn <= 0)
 		{
 			break;
 		}
@@ -294,19 +295,6 @@ bool UEnergySystem::RemoveEnergy(int32 Value)
 		{
 			return false;
 		}
-	}
-
-	if (CurrentEnergy[SYSTEM_SHIELDS] >= Value)
-	{
-		CurrentEnergy[SYSTEM_SHIELDS] -= Value;
-	}
-	else
-	{
-		Value -= CurrentEnergy[SYSTEM_SHIELDS];
-		CurrentEnergy[SYSTEM_SHIELDS] = 0;
-		CurrentGeneratorStructure -= Value;
-
-
 	}
 
 	return true;
