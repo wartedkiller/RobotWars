@@ -3,7 +3,6 @@
 #include "Robot.h"
 #include "PaperSpriteComponent.h"
 #include "Components/ArrowComponent.h"
-#include "Camera/CameraComponent.h"
 #include "RobotWarsStatics.h"
 #include "Engine/World.h"
 #include "Components/CapsuleComponent.h"
