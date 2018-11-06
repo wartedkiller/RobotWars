@@ -16,6 +16,7 @@
 #include "EnergySystem.h"
 #include "SensorSystem.h"
 #include "DrawDebugHelpers.h"
+#include "Arena.h"
 
 
 /***********************************************************************************************
@@ -53,6 +54,20 @@ ARobot::ARobot()
 	RobotDirection = CreateDefaultSubobject<UArrowComponent>(TEXT("RobotDirection"));
 	RobotDirection->SetupAttachment(RootComponent);
 	
+	//Creating the UStaticMeshComponent for the Shield.
+	RobotShield = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RobotShield"));
+	RobotShield->SetupAttachment(RobotDirection);
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> ShieldVisualAsset(TEXT("StaticMesh'/Game/Mesh/Shield.Shield'"));
+	if (ShieldVisualAsset.Succeeded())
+	{
+		RobotShield->SetStaticMesh(ShieldVisualAsset.Object);
+		RobotShield->SetWorldLocation(RobotDirection->GetComponentLocation() + FVector(0.0f, 0.0f, 10.0f));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Could not load static mesh for the Shield"))
+	}
+
 	//Creating the default Robot sprite.
 	//NOTE: Paper2D is an abandon ware in Unreal 4. While it will always be
 	//in the Engine, it won't receive future upgrade. A solution to this is
@@ -63,7 +78,7 @@ ARobot::ARobot()
 	if (RobotVisualAsset.Succeeded())
 	{
 		RobotMesh->SetStaticMesh(RobotVisualAsset.Object);
-		RobotMesh->SetWorldLocation(RobotDirection->GetComponentLocation() + FVector(0.0f, 0.0f, -1.0f));
+		RobotMesh->SetWorldLocation(RobotDirection->GetComponentLocation() + FVector(0.0f, 0.0f, -10.0f));
 	}
 	else
 	{
@@ -74,20 +89,7 @@ ARobot::ARobot()
 	//of the Robots is not important. That's why the Capsule is 200 unit high.
 	RobotCollisionCapsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RobotCollisionCapsule"));
 	RobotCollisionCapsule->SetupAttachment(RobotDirection);
-	RobotCollisionCapsule->InitCapsuleSize(25.0f, 200.0f); 
-
-	//Creating the UStaticMeshComponent for the Shield.
-	RobotShield = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RobotShield"));
-	RobotShield->SetupAttachment(RobotDirection);
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> ShieldVisualAsset(TEXT("StaticMesh'/Game/Mesh/Shield.Shield'"));
-	if (ShieldVisualAsset.Succeeded())
-	{
-		RobotShield->SetStaticMesh(ShieldVisualAsset.Object);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Could not load static mesh for the Shield"))
-	}
+	RobotCollisionCapsule->InitCapsuleSize(25.0f, 200.0f);
 
 	//Loading the materials to be used in the BeginPlay() method.
 	static ConstructorHelpers::FObjectFinder<UMaterial> ShieldMaterialGetter(TEXT("Material'/Game/Material/ShieldMaterial.ShieldMaterial'"));
@@ -820,8 +822,31 @@ void ARobot::MoveRobot(float DeltaTime)
 		{
 			for (FHitResult CurrentHit : OutHit)
 			{
-				if (UCapsuleComponent* CollisionChecker = Cast<UCapsuleComponent>(CurrentHit.GetComponent()))
+				//if (UCapsuleComponent* CollisionChecker = Cast<UCapsuleComponent>(CurrentHit.GetComponent()))
 				{
+					if (Cast<AArena>(CurrentHit.GetActor()))
+					{
+						if (CurrentHit.GetComponent()->GetName().Compare("NorthWall") == 0)
+						{
+							FuturPosition.X = GetActorLocation().X - 0.1f;
+						}
+						else if (CurrentHit.GetComponent()->GetName().Compare("WestWall") == 0)
+						{
+							FuturPosition.Y = GetActorLocation().Y + 0.1f;
+						}
+						else if (CurrentHit.GetComponent()->GetName().Compare("SouthWall") == 0)
+						{
+							FuturPosition.X = GetActorLocation().X + 0.1f;
+						}
+						else if (CurrentHit.GetComponent()->GetName().Compare("EastWall") == 0)
+						{
+							FuturPosition.Y = GetActorLocation().Y - 0.1f;
+						}
+						UE_LOG(LogTemp, Warning, TEXT("Name = %s"), *CurrentHit.GetComponent()->GetName())
+							//FuturPosition = CurrentHit.Location;
+						GetHit(DAMAGE_WALL, 0);
+					}
+
 					if (ARobot* CurrentHitActor = Cast<ARobot>(CurrentHit.GetActor()))
 					{
 						if (CurrentHitActor->GetName().Compare(this->GetName()) != 0)
@@ -862,12 +887,11 @@ void ARobot::MoveRobot(float DeltaTime)
 
 							//TODO Damage should dvantage the Robot going faster.
 							//Current idea: this->RobotSpeed / 2 + CurrentHitActor->GetRobotSpeed()
-							GetHit(DAMAGE_ROBOT, this->RobotSpeed + CurrentHitActor->GetRobotSpeed());
-
+							GetHit(DAMAGE_ROBOT, (this->RobotSpeed / 2) + CurrentHitActor->GetRobotSpeed());
+							Score += this->RobotSpeed + (CurrentHitActor->GetRobotSpeed() / 2);
 							break;
 						}
-					}
-
+					}		
 				}
 			}
 		}
@@ -997,14 +1021,18 @@ Note:			Nothing.
 ***********************************************************************************************/
 void ARobot::UpdateShield()
 {
+	float ShieldRatio = 0.8f;
+
 	if ((EnergySystem->GetSystemEnergy(SYSTEM_SHIELDS) / SHIELDS_LEAK_THRESHOLD) < 1.0f)
 	{
-		if (RobotShield)
+		ShieldRatio = EnergySystem->GetSystemEnergy(SYSTEM_SHIELDS) / SHIELDS_LEAK_THRESHOLD * ShieldRatio;
+	}
+
+	if (RobotShield)
+	{
+		if (ShieldMaterial)
 		{
-			if (ShieldMaterial)
-			{
-				ShieldMaterial->SetScalarParameterValue("ShieldTransparency", EnergySystem->GetSystemEnergy(SYSTEM_SHIELDS) / SHIELDS_LEAK_THRESHOLD * 0.8f);
-			}
+			ShieldMaterial->SetScalarParameterValue("ShieldTransparency", ShieldRatio);
 		}
 	}
 }

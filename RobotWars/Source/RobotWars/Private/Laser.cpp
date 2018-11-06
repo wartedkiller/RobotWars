@@ -6,6 +6,7 @@
 #include "Components/ArrowComponent.h"
 #include "Engine/World.h"
 #include "Robot.h"
+#include "Arena.h"
 
 // Sets default values
 ALaser::ALaser()
@@ -59,20 +60,26 @@ void ALaser::Tick(float DeltaTime)
 		//Else move the missile forward
 		if (World->SweepMultiByProfile(OutHit, CurrentLocation, DesiredEndLocation, FQuat::Identity, MovementCollisionProfile, CollisionShape))
 		{
-			for (int32 CurrentCollision = 0; CurrentCollision < OutHit.Num(); CurrentCollision++)
+			for (FHitResult CurrentCollision : OutHit)
 			{
-				if (OutHit[CurrentCollision].GetActor()->GetName().Compare(this->GetOwner()->GetName()) == 0 || OutHit[CurrentCollision].GetActor()->GetName().Compare(this->GetName()) == 0)
+				if (Cast<AArena>(CurrentCollision.GetActor()))
+				{
+					Explode();
+					break;
+				}
+				if (CurrentCollision.GetActor()->GetName().Compare(this->GetOwner()->GetName()) == 0 || CurrentCollision.GetActor()->GetName().Compare(this->GetName()) == 0)
 				{
 					SetActorLocation(DesiredEndLocation);
 				}
 				else
 				{
-					SetActorLocation(OutHit[CurrentCollision].Location);
+					SetActorLocation(CurrentCollision.Location);
 
 					//TODO Check for splash damage from the explosion.
-					if (ARobot* HitRobot = Cast<ARobot>(OutHit[CurrentCollision].GetActor()))
+					if (ARobot* HitRobot = Cast<ARobot>(CurrentCollision.GetActor()))
 					{
 						HitRobot->GetHit(DAMAGE_LASER, LaserDamage);
+						((ARobot*)this->GetOwner())->Score += LaserDamage;
 						Explode();
 						break;
 					}

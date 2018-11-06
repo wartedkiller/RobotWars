@@ -35,7 +35,7 @@ ARobotWars_Spectator::ARobotWars_Spectator()
 	//This will be remove and placed in the spectator.
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("SpectatorCamera"));
 	CameraComponent->bUsePawnControlRotation = false;
-	//CameraComponent->ProjectionMode = ECameraProjectionMode::Orthographic;
+	CameraComponent->ProjectionMode = ECameraProjectionMode::Orthographic;
 
 	//Set the resolution and aspect ratio of the camera. It is set to 1280.0 width with an aspect ratio of 16:9 so the height is 720.0 (720p).
 	CameraComponent->OrthoWidth = 1280.0f;
