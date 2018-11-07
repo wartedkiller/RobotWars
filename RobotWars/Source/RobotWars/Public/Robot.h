@@ -82,6 +82,7 @@ private:
 	void UpdateShield();
 	void UpdateInformation();
 	void KillThisRobot();
+	void AddBumpInfo(DAMAGETYPE DamageType);
 
 	UFUNCTION()
 	void TurnBoosOff();

@@ -7,8 +7,10 @@
 #include "GameFramework/Actor.h"
 #include "Missile.generated.h"
 
-#define MISSILE_SPEED	150.0f
-#define MISSILE_DAMAGE	150
+#define MISSILE_SPEED				150.0f
+#define MISSILE_DAMAGE				150
+#define MISSILE_EXPLOSION_RADIUS	50.0f
+#define MISSILE_SPLASH_DAMAGE		50.0f
 
 UCLASS()
 class ROBOTWARS_API AMissile : public AActor
@@ -37,7 +39,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 private:
-	void Explode();
+	void Explode(FVector ExplosionLocation);
 
 
 /********VARIABLES********/
@@ -48,5 +50,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Projectile")
 		float Radius;
+
+private:
+
+	class AActor* ActorHitByMissile = nullptr;
 	
 };

@@ -1,1 +1,3 @@
--Bumping into a Robot now deal ThisRobotSpeed + OtherRobotSpeed damage.
+-Bumping into a Robot now deal ThisRobotSpeed / 2 + OtherRobotSpeed damage to give an advantage to the faster Robot.
+-Robot radius is 20 unit.So RangeSensor minimal value is 20/-20.
+-The Arena is centered on (0,0). Top left corner is (360, -507) and bottom right corner is (-360, 507).

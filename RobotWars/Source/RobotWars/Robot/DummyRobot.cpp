@@ -16,6 +16,9 @@ void ADummyRobot::Tick(float DeltaTime)
 void ADummyRobot::BeginPlay()
 {
 	Super::BeginPlay();
+
+	AddSensor(1, SENSOR_RADAR, 0, 45, 100);
+	AddSensor(0, SENSOR_RANGE, 0, 0, 125);
 }
 
 

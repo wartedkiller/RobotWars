@@ -89,7 +89,7 @@ ARobot::ARobot()
 	//of the Robots is not important. That's why the Capsule is 200 unit high.
 	RobotCollisionCapsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RobotCollisionCapsule"));
 	RobotCollisionCapsule->SetupAttachment(RobotDirection);
-	RobotCollisionCapsule->InitCapsuleSize(25.0f, 200.0f);
+	RobotCollisionCapsule->InitCapsuleSize(22.0f, 200.0f);
 
 	//Loading the materials to be used in the BeginPlay() method.
 	static ConstructorHelpers::FObjectFinder<UMaterial> ShieldMaterialGetter(TEXT("Material'/Game/Material/ShieldMaterial.ShieldMaterial'"));
@@ -822,31 +822,29 @@ void ARobot::MoveRobot(float DeltaTime)
 		{
 			for (FHitResult CurrentHit : OutHit)
 			{
-				//if (UCapsuleComponent* CollisionChecker = Cast<UCapsuleComponent>(CurrentHit.GetComponent()))
+				//Check for collision with the Arena. If there is a collision, don't change the Robot position for that axis.
+				if (Cast<AArena>(CurrentHit.GetActor()))
 				{
-					if (Cast<AArena>(CurrentHit.GetActor()))
+					if (CurrentHit.GetComponent()->GetName().Compare("NorthWall") == 0)
 					{
-						if (CurrentHit.GetComponent()->GetName().Compare("NorthWall") == 0)
-						{
-							FuturPosition.X = GetActorLocation().X - 0.1f;
-						}
-						else if (CurrentHit.GetComponent()->GetName().Compare("WestWall") == 0)
-						{
-							FuturPosition.Y = GetActorLocation().Y + 0.1f;
-						}
-						else if (CurrentHit.GetComponent()->GetName().Compare("SouthWall") == 0)
-						{
-							FuturPosition.X = GetActorLocation().X + 0.1f;
-						}
-						else if (CurrentHit.GetComponent()->GetName().Compare("EastWall") == 0)
-						{
-							FuturPosition.Y = GetActorLocation().Y - 0.1f;
-						}
-						UE_LOG(LogTemp, Warning, TEXT("Name = %s"), *CurrentHit.GetComponent()->GetName())
-							//FuturPosition = CurrentHit.Location;
-						GetHit(DAMAGE_WALL, 0);
+						FuturPosition.X = GetActorLocation().X;
 					}
-
+					else if (CurrentHit.GetComponent()->GetName().Compare("WestWall") == 0)
+					{
+						FuturPosition.Y = GetActorLocation().Y;
+					}
+					else if (CurrentHit.GetComponent()->GetName().Compare("SouthWall") == 0)
+					{
+						FuturPosition.X = GetActorLocation().X;
+					}
+					else if (CurrentHit.GetComponent()->GetName().Compare("EastWall") == 0)
+					{
+						FuturPosition.Y = GetActorLocation().Y;
+					}
+					AddBumpInfo(DAMAGE_WALL);
+				}
+				else if (Cast<UCapsuleComponent>(CurrentHit.GetComponent()))
+				{
 					if (ARobot* CurrentHitActor = Cast<ARobot>(CurrentHit.GetActor()))
 					{
 						if (CurrentHitActor->GetName().Compare(this->GetName()) != 0)
@@ -877,11 +875,11 @@ void ARobot::MoveRobot(float DeltaTime)
 							//This is not working properly but with Vector calculation it should be fine.
 							/*if (RecoilVelocity == 0.0f)
 							{
-								RecoilHeading = NewRecoilHeading;
+							RecoilHeading = NewRecoilHeading;
 							}
 							else
 							{
-								RecoilHeading = (RecoilHeading + NewRecoilHeading) / 2;
+							RecoilHeading = (RecoilHeading + NewRecoilHeading) / 2;
 							}*/
 							RecoilVelocity = BASE_RECOIL_VELOCITY;
 
@@ -891,8 +889,8 @@ void ARobot::MoveRobot(float DeltaTime)
 							Score += this->RobotSpeed + (CurrentHitActor->GetRobotSpeed() / 2);
 							break;
 						}
-					}		
-				}
+					}
+				}	
 			}
 		}
 	}
@@ -957,7 +955,12 @@ void ARobot::UpdateSensor()
 							for (int32 CurrentCollision = 0; CurrentCollision < OutHit.Num(); CurrentCollision++)
 							{
 								AActor* OtherActor = OutHit[CurrentCollision].GetActor();
-								if (ARobot* temp = Cast<ARobot>(OtherActor))
+								if (AArena* temp = Cast<AArena>(OtherActor))
+								{
+									PosEnd = OutHit[CurrentCollision].Location;
+									break;
+								}
+								else if (ARobot* temp = Cast<ARobot>(OtherActor))
 								{
 									if (OtherActor->GetName().Compare(this->GetName()) != 0)
 									{
@@ -1078,6 +1081,40 @@ void ARobot::KillThisRobot()
 	//TODO Remove the Robot, play explosion.
 	bIsAlive = false;
 	this->Destroy();
+}
+
+/***********************************************************************************************
+
+Mehtod:			AddBumpInfo
+
+Description:	This method is called when the Robot hit something or something hit the Robot.
+				It set the BumbInfo depending on what hit the Robot.
+
+Parameters:		DAMAGETYPE DamageType	-The type ob object that hit the Robot.
+
+Returns:		Nothing.
+
+Note:			Nothing.
+***********************************************************************************************/
+void ARobot::AddBumpInfo(DAMAGETYPE DamageType)
+{
+	switch (DamageType)
+	{
+	case DAMAGE_MISSILE:
+		BumpInfo |= BUMP_MISSILE;
+		break;
+	case DAMAGE_LASER:
+		BumpInfo |= BUMP_LASER;
+		break;
+	case DAMAGE_ROBOT:
+		BumpInfo |= BUMP_ROBOT;
+		break;
+	case DAMAGE_WALL:
+		BumpInfo |= BUMP_WALL;
+		break;
+	default:
+		break;
+	}
 }
 
 /***********************************************************************************************
@@ -1217,7 +1254,6 @@ Returns:		Nothing.
 
 Note:			Nothing.
 ***********************************************************************************************/
-// Called every frame
 void ARobot::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -1284,23 +1320,7 @@ Note:			Nothing.
 ***********************************************************************************************/
 void ARobot::GetHit(DAMAGETYPE DamageType, float DamageValue)
 {
-	switch (DamageType)
-	{
-	case DAMAGE_MISSILE:
-		BumpInfo |= BUMP_MISSILE;
-		break;
-	case DAMAGE_LASER:
-		BumpInfo |= BUMP_LASER;
-		break;
-	case DAMAGE_ROBOT:
-		BumpInfo |= BUMP_ROBOT;
-		break;
-	case DAMAGE_WALL:
-		BumpInfo |= BUMP_WALL;
-		break;
-	default:
-		break;
-	}
+	AddBumpInfo(DamageType);
 
 	if (!EnergySystem->RemoveEnergy(DamageValue))
 	{

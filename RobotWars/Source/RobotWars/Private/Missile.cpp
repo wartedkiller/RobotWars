@@ -7,6 +7,7 @@
 #include "Engine/World.h"
 #include "Robot.h"
 #include "Arena.h"
+#include "Components/CapsuleComponent.h"
 
 
 /****************************************************
@@ -71,7 +72,8 @@ void AMissile::Tick(float DeltaTime)
 				UE_LOG(LogTemp, Warning, TEXT("%s"), *CurrentCollision.GetActor()->GetName())
 				if (Cast<AArena>(CurrentCollision.GetActor()))
 				{
-					Explode();
+					ActorHitByMissile = CurrentCollision.GetActor();
+					Explode(CurrentCollision.Location);
 					break;
 				}
 				if (CurrentCollision.GetActor()->GetName().Compare(this->GetOwner()->GetName()) == 0 || CurrentCollision.GetActor()->GetName().Compare(this->GetName()) == 0)
@@ -82,12 +84,12 @@ void AMissile::Tick(float DeltaTime)
 				{
 					//SetActorLocation(OutHit[CurrentCollision].Location);
 
-					//TODO Check for splash damage from the explosion.
 					if (ARobot* HitRobot = Cast<ARobot>(CurrentCollision.GetActor()))
 					{
+						ActorHitByMissile = HitRobot;
 						HitRobot->GetHit(DAMAGE_MISSILE, MISSILE_DAMAGE);
 						((ARobot*)this->GetOwner())->Score += MISSILE_DAMAGE;
-						Explode();
+						Explode(CurrentCollision.Location);
 						break;
 					}
 				}
@@ -102,10 +104,50 @@ void AMissile::Tick(float DeltaTime)
 }
 
 //TODO Add damage based on distance of the explosion.
-void AMissile::Explode()
+void AMissile::Explode(FVector ExplosionLocation)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Insert Missile Explosion Here"))
-	
+
+
+	//Check for Splash damage.
+	//Check for collision
+	if (UWorld* World = GetWorld())
+	{
+		TArray<FHitResult> OutHit;
+		FCollisionShape CollisionShape;
+		CollisionShape.SetCapsule(MISSILE_EXPLOSION_RADIUS, MISSILE_EXPLOSION_RADIUS);
+
+		if (World->SweepMultiByProfile(OutHit, GetActorLocation(), GetActorLocation(), FQuat::Identity, MovementCollisionProfile, CollisionShape))
+		{
+			for (FHitResult CurrentCollision : OutHit)
+			{
+				if (ARobot* HitRobot = Cast<ARobot>(CurrentCollision.GetActor()))
+				{
+					if (Cast<UCapsuleComponent>(CurrentCollision.GetComponent()))
+					{
+						FVector DistanceVector = CurrentCollision.Location - ExplosionLocation;
+						//Setting the FVector Z axis to 40.0f set it at the same height it was before de substraction.
+						DistanceVector.Z = 40.0f;
+						float Distance = DistanceVector.Size();
+						float SplashDamage = (Distance / MISSILE_EXPLOSION_RADIUS) * MISSILE_SPLASH_DAMAGE;
+						HitRobot->GetHit(DAMAGE_MISSILE, SplashDamage);
+
+						if (ActorHitByMissile != nullptr)
+						{
+							if (CurrentCollision.GetActor()->GetName().Compare(this->GetOwner()->GetName()) != 0)
+							{
+								Cast<ARobot>(GetOwner())->Score += SplashDamage;
+							}
+						}
+						else
+						{
+							UE_LOG(LogTemp, Warning, TEXT("I WAS NULLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL"))
+						}
+					}
+				}
+			}
+		}
+	}
 	Destroy();
 }
 
