@@ -8,18 +8,8 @@
 #include "RobotWarsEnum.h"
 #include "SensorSystem.h"
 #include "TimerManager.h"
+#include "RobotWarsStatics.h"
 #include "Robot.generated.h"
-
-#define MAX_TREAD_SPEED			100.0f
-#define MIN_TREAD_SPEED		-100.0f
-#define MAX_SPEED				100.0f				//In UnrealUnit/s
-#define TREAD_DISTANCE			15.0f
-#define TURBO_ENERGY_COST		100
-#define GPS_ENERGY_COST			2
-#define TURBO_TIME				3.0f
-#define TURBO_SPEED				200
-#define ARENA_FRICTION			40.0f
-#define BASE_RECOIL_VELOCITY	80.0f
 
 
 UCLASS()

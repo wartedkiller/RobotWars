@@ -89,7 +89,7 @@ ARobot::ARobot()
 	//of the Robots is not important. That's why the Capsule is 200 unit high.
 	RobotCollisionCapsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RobotCollisionCapsule"));
 	RobotCollisionCapsule->SetupAttachment(RobotDirection);
-	RobotCollisionCapsule->InitCapsuleSize(22.0f, 200.0f);
+	RobotCollisionCapsule->InitCapsuleSize(24.0f, 200.0f);
 
 	//Loading the materials to be used in the BeginPlay() method.
 	static ConstructorHelpers::FObjectFinder<UMaterial> ShieldMaterialGetter(TEXT("Material'/Game/Material/ShieldMaterial.ShieldMaterial'"));
@@ -843,8 +843,10 @@ void ARobot::MoveRobot(float DeltaTime)
 					}
 					AddBumpInfo(DAMAGE_WALL);
 				}
+				//Check if the collision is made with a Robot body and not Sensors.
 				else if (Cast<UCapsuleComponent>(CurrentHit.GetComponent()))
 				{
+					//Check if the collision is made with a Robot. Might be redundent.
 					if (ARobot* CurrentHitActor = Cast<ARobot>(CurrentHit.GetActor()))
 					{
 						if (CurrentHitActor->GetName().Compare(this->GetName()) != 0)
@@ -862,7 +864,7 @@ void ARobot::MoveRobot(float DeltaTime)
 								}
 							}
 							bCollisionThisTurn = true;
-							//TODO Check recoil speed. Currently acceptable but might need to do some real math.
+							//TODO Check recoil speed. Currently acceptable but might need to do some real math with FVector.
 							FVector RecoilDirection = this->GetActorLocation() - CurrentHitActor->GetActorLocation();
 							RecoilDirection.Normalize();
 
@@ -883,9 +885,9 @@ void ARobot::MoveRobot(float DeltaTime)
 							}*/
 							RecoilVelocity = BASE_RECOIL_VELOCITY;
 
-							//TODO Damage should dvantage the Robot going faster.
-							//Current idea: this->RobotSpeed / 2 + CurrentHitActor->GetRobotSpeed()
+							//Deal damage to THIS Robot.
 							GetHit(DAMAGE_ROBOT, (this->RobotSpeed / 2) + CurrentHitActor->GetRobotSpeed());
+							//Calculate the damage dealt to the OTHER Robot and add points to THIS Robot Score.
 							Score += this->RobotSpeed + (CurrentHitActor->GetRobotSpeed() / 2);
 							break;
 						}
@@ -937,7 +939,7 @@ void ARobot::UpdateSensor()
 					int32 SensorAngle = SensorArray[i]->GetSensorAngle();
 
 					FVector PosStart = RobotDirection->GetComponentLocation();
-					FVector PosEnd = PosStart + RobotDirection->GetComponentRotation().Vector() * SensorArray[i]->GetSensorRange();
+					FVector PosEnd = PosStart + RobotDirection->GetComponentRotation().Vector() * RANGE_MAX_RANGE/*SensorArray[i]->GetSensorRange()*/;
 
 					if (UWorld* World = GetWorld())
 					{
@@ -1051,9 +1053,8 @@ Parameters:		Nothing.
 
 Returns:		Nothing.
 
-Note:			- Not tested yet but, if the Robot is Destroyed while the TurboBoost is ON, it
-might crash the Engine since it won't be able to call the Method on a
-destroyed Object.
+Note:			Nothing.
+
 ***********************************************************************************************/
 void ARobot::UpdateInformation()
 {
@@ -1169,11 +1170,14 @@ void ARobot::RadarOverlap(UPrimitiveComponent * OverlappedComponent, AActor * Ot
 				//Find the right Sensor and check if it's powered and turned on.
 				if (Cast<UStaticMeshComponent>(OverlappedComponent) == SensorMeshArray[i] && !SensorMeshArray[i]->bHiddenInGame)
 				{
-					//Check if the Sensor is already set to 1.
-					if (SensorArray[i]->GetSensorData() != 1)
+					if (Cast<ARobot>(OtherActor))
 					{
-						//MAGIC NUMBER ALERT! Right now Radar Sensor can only detect Robot but in a futur iteration it might want to detect missiles or other new weapon.
-						SensorArray[i]->SetSensorData(1);
+						//Check if the Sensor is already set to 1.
+						if (SensorArray[i]->GetSensorData() != 1)
+						{
+							//MAGIC NUMBER ALERT! Right now Radar Sensor can only detect Robot but in a futur iteration it might want to detect missiles or other new weapon.
+							SensorArray[i]->SetSensorData(1);
+						}
 					}
 				}
 			}
@@ -1221,13 +1225,11 @@ void ARobot::RadarOverlapEnd(UPrimitiveComponent * OverlappedComponent, AActor *
 						TArray<UPrimitiveComponent*> OverlappingComponents;
 						OverlappedComponent->GetOverlappingComponents(OverlappingComponents);
 
-						//GEtting all the Component overlapping the RadarSensor
-						for (int32 CurrentOverlappingComponent = 0; CurrentOverlappingComponent < OverlappingComponents.Num(); CurrentOverlappingComponent++)
+						//Getting all the Component overlapping the RadarSensor
+						for (UPrimitiveComponent* CurrentOverlappingComponent : OverlappingComponents)
 						{
-							UCapsuleComponent* temp = Cast<UCapsuleComponent>(OverlappingComponents[CurrentOverlappingComponent]);
-
 							//If the Component overlapping is a UCapsuleComponent then a Rabot is in the RadarSensor since Robot are the only Actor using UCapsuleComponent
-							if (temp)
+							if (UCapsuleComponent* temp = Cast<UCapsuleComponent>(CurrentOverlappingComponent))
 							{
 								return;
 							}

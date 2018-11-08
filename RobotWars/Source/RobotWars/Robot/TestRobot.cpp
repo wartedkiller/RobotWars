@@ -32,5 +32,6 @@ void ATestRobot::BeginPlay()
 	SetSystemChargeRate(SYSTEM_MISSILES, 600);
 	
 	AddSensor(1, SENSOR_RADAR, 0, 45, 100);
-	AddSensor(0, SENSOR_RANGE, 0, 0, 125);
+	AddSensor(0, SENSOR_RANGE, 40, 0, 125);
+	AddSensor(2, SENSOR_RANGE, 140, 0, 125);
 }
