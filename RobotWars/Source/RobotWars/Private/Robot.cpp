@@ -653,10 +653,7 @@ GPS_INFO ARobot::GetGPSInfo()
 		GPSInfo.x = temp.Y;
 		GPSInfo.y = temp.X;
 		GPSInfo.heading = RobotDirection->GetComponentRotation().Yaw;
-		if (GPSInfo.heading < 0)
-		{
-			GPSInfo.heading += 360;
-		}
+
 	}
 	else
 	{
@@ -792,7 +789,7 @@ void ARobot::MoveRobot(float DeltaTime)
 	{
 		if (DistanceLeftTread == DistanceRightTread)
 		{
-			FuturHeading += FMath::Atan(DistanceRightTread * FMath::Sign(RightTreadSpeed) / (TREAD_DISTANCE / 2));
+			FuturHeading += FMath::Atan(DistanceLeftTread * FMath::Sign(LeftTreadSpeed) / (TREAD_DISTANCE / 2));
 		}
 		//Pivot point is outside of the robot which mean wide turn
 		else if (RightTreadSpeed > 0)
@@ -945,8 +942,11 @@ void ARobot::UpdateSensor()
 					//Update the line position of the sensor as if there is no collision.
 					int32 SensorAngle = SensorArray[i]->GetSensorAngle();
 
+					FRotator FutureAngle = RobotDirection->GetComponentRotation();
+					FutureAngle.Yaw += SensorAngle;
+
 					FVector PosStart = RobotDirection->GetComponentLocation();
-					FVector PosEnd = PosStart + RobotDirection->GetComponentRotation().Vector() * RANGE_MAX_RANGE/*SensorArray[i]->GetSensorRange()*/;
+					FVector PosEnd = PosStart + FutureAngle.Vector() * RANGE_MAX_RANGE;
 
 					if (UWorld* World = GetWorld())
 					{
@@ -982,6 +982,8 @@ void ARobot::UpdateSensor()
 
 						}
 					}
+
+					SensorArray[i]->SetSensorData(FMath::FloorToInt((PosEnd - PosStart).Size()));
 
 					GetWorld()->LineBatcher->DrawLine(PosStart, PosEnd, RobotColor, 1, 2.0f);
 					SensorMeshArray[i]->SetWorldLocation(PosEnd);

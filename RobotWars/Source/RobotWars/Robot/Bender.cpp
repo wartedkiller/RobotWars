@@ -18,8 +18,8 @@ void ABender::Tick(float DeltaTime)
 	//static so they'll preserve their value from call to call.
 	//I TOLD YOU there was a use for it!
 
-	int frontRange, backRange;
-	int numViews = 0, laserHits = 0;
+	int32 frontRange, backRange;
+	int32 numViews = 0, laserHits = 0;
 	char statusMessage[STATUS_MSG_LEN];
 	SYSTEM prios[NUM_ENERGY_SYSTEMS] = { SYSTEM_MISSILES, SYSTEM_SENSORS,
 		SYSTEM_SHIELDS, SYSTEM_LASERS };
@@ -27,6 +27,11 @@ void ABender::Tick(float DeltaTime)
 
 	SetSystemChargeRate(SYSTEM_SHIELDS, 200);
 	SetSystemChargeRate(SYSTEM_MISSILES, 600);
+
+	UE_LOG(LogTemp, Warning, TEXT("Sensor 0 data = %d"), GetSensorData(0));
+	UE_LOG(LogTemp, Warning, TEXT("Sensor 1 data = %d"), GetSensorData(1));
+	UE_LOG(LogTemp, Warning, TEXT("Sensor 2 data = %d"), GetSensorData(2));
+	UE_LOG(LogTemp, Warning, TEXT("Sensor 3 data = %d"), GetSensorData(3));
 
 	if (GetSensorData(1) > 0)
 		SetMotorSpeeds(25, 25);

@@ -22,5 +22,5 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	
-	int32 target = 1;
+	int32 target = 3;
 };
