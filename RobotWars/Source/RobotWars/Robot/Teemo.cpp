@@ -14,9 +14,7 @@ void ATeemo::Tick(float DeltaTime)
 
 	Shield_Sensor_Charge();
 
-	teemo_case = Teemo_Case();
-
-	Case_Select(teemo_case);
+	Case_Select(Teemo_Case());
 
 }
 /*
@@ -36,7 +34,8 @@ int ATeemo::Teemo_Case()
 	//Return 4 Mode chasse
 
 	if (GetSensorData(0) == 1 && GetSensorData(1) == 1) {
-		if (GetBumpInfo() == 0x04 || GetBumpInfo() == 0x08) {
+		int32 BumpInfo = GetBumpInfo();
+		if (BumpInfo >= 0x04) {
 			return 3;
 		}
 		else {

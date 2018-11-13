@@ -89,7 +89,7 @@ ARobot::ARobot()
 	//of the Robots is not important. That's why the Capsule is 200 unit high.
 	RobotCollisionCapsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RobotCollisionCapsule"));
 	RobotCollisionCapsule->SetupAttachment(RobotDirection);
-	RobotCollisionCapsule->InitCapsuleSize(24.0f, 200.0f);
+	RobotCollisionCapsule->InitCapsuleSize(25.0f, 200.0f);
 
 	//Loading the materials to be used in the BeginPlay() method.
 	static ConstructorHelpers::FObjectFinder<UMaterial> ShieldMaterialGetter(TEXT("Material'/Game/Material/ShieldMaterial.ShieldMaterial'"));
@@ -644,12 +644,19 @@ GPS_INFO ARobot::GetGPSInfo()
 
 	if (EnergySystem->GetSystemEnergy(SYSTEM_SHIELDS) >= GPS_ENERGY_COST)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("GPS call get Energy = %f"), EnergySystem->GetSystemEnergy(SYSTEM_SHIELDS));
 		//Checking if there is enough energy in the shield before removing it because it will remove the cost in the Generator if there is not enough shield energy.
-		EnergySystem->RemoveEnergy(GPS_ENERGY_COST);
+		//EnergySystem->DamageShield(GPS_ENERGY_COST);
 
-		GPSInfo.x = temp.X;
-		GPSInfo.y = temp.Y;
-		GPSInfo.heading = GetActorRotation().Yaw;
+		//TODO Fix the Arena rotation.
+		//The Arena is sideway so changing the X and Y coordinate makes it so it doesn't show. Fixing everything inverting those break many things and should be fixe. But no time right now.
+		GPSInfo.x = temp.Y;
+		GPSInfo.y = temp.X;
+		GPSInfo.heading = RobotDirection->GetComponentRotation().Yaw;
+		if (GPSInfo.heading < 0)
+		{
+			GPSInfo.heading += 360;
+		}
 	}
 	else
 	{

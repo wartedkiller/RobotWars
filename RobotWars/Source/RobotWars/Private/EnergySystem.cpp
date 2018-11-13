@@ -300,3 +300,16 @@ bool UEnergySystem::RemoveEnergy(int32 Value)
 	return true;
 }
 
+bool UEnergySystem::DamageShield(int32 value)
+{
+	if (CurrentEnergy[SYSTEM_SHIELDS] >= value)
+	{
+		CurrentEnergy[SYSTEM_SHIELDS] -= value;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+

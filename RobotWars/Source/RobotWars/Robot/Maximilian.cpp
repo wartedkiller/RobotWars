@@ -49,34 +49,32 @@ void AMaximilian::Tick(float DeltaTime)
 		gpsData = GetGPSInfo();
 		switch (target) {
 		case 0:
-			targetX = 30, targetY = 30;
+			targetX = -457, targetY = 310;
 			break;
 		case 1:
-			targetX = 345, targetY = 345;
+			targetX = 457, targetY = -310;
 			break;
 		case 2:
-			targetX = 30, targetY = 345;
+			targetX = -457, targetY = -310;
 			break;
 		case 3:
-			targetX = 345, targetY = 30;
+			targetX = 457, targetY = 310;
 			break;
 
 		}
-		dx = gpsData.x - targetX;
-		dy = gpsData.y - targetY;
-		dist = sqrt(pow(dx, 2) + pow(dy, 2));
+		dx = targetX - gpsData.x;
+		dy = targetY - gpsData.y;
+
+		dist = FMath::Sqrt(FMath::Square(dx) + FMath::Square(dy));
 		if (dist < 10) {
 			target += 1 % 4;
 		}
-		angle = asin(dy / dist);
-		//angle *= RAD_PER_DEG;
-		UE_LOG(LogTemp, Warning, TEXT("Maximilian angle before conveeting = %f"), angle)
-
+		angle = FMath::Asin(dy / dist);
 		angle = FMath::RadiansToDegrees(angle);
 
-		UE_LOG(LogTemp, Warning, TEXT("Maximilian angle after conveeting = %f"), angle)
+		UE_LOG(LogTemp, Warning, TEXT("Maximilian: dx = %f    dy = %f"), dx, dy);
 
-		if (dy < 0) {
+		/*if (dy < 0) {
 			if (dx < 0)
 				angle = -angle;
 			else
@@ -85,11 +83,11 @@ void AMaximilian::Tick(float DeltaTime)
 		else if (dx > 0)
 			angle = angle + 180;
 		else
-			angle = 360 - angle;
+			angle = 360 - angle;*/
 
-		if (abs(gpsData.heading - angle) < 2.5)
+		if (FMath::Abs(gpsData.heading - angle) < 2.5)
 			SetMotorSpeeds(100, 100);
-		else if (gpsData.heading - angle > 0)
+		else if (gpsData.heading < angle)
 			SetMotorSpeeds(100, 60);
 		else
 			SetMotorSpeeds(60, 100);

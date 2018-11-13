@@ -33,6 +33,7 @@ public:
 	void SetSystemChargeRate(SYSTEM type, int32 rate);
 	void UpdateEnergySystem(float DeltaTime, ARobot* robot);
 	bool RemoveEnergy(int32 Value);
+	bool DamageShield(int32 value);
 
 
 	///********** VARIABLE **************************************************************************************************************************************************
