@@ -106,9 +106,9 @@ void AMissile::Tick(float DeltaTime)
 //TODO Add damage based on distance of the explosion.
 void AMissile::Explode(FVector ExplosionLocation)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Insert Missile Explosion Here"))
+	UE_LOG(LogTemp, Warning, TEXT("Insert Missile Explosion Here"));
 
-
+	this->PlayExplosionSound();
 	//Check for Splash damage.
 	//Check for collision
 	if (UWorld* World = GetWorld())
@@ -138,10 +138,6 @@ void AMissile::Explode(FVector ExplosionLocation)
 							{
 								Cast<ARobot>(GetOwner())->Score += SplashDamage;
 							}
-						}
-						else
-						{
-							UE_LOG(LogTemp, Warning, TEXT("I WAS NULLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL"))
 						}
 					}
 				}

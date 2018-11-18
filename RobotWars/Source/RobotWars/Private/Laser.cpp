@@ -7,6 +7,8 @@
 #include "Engine/World.h"
 #include "Robot.h"
 #include "Arena.h"
+#include "Kismet/GameplayStatics.h"
+#include "UObject/ConstructorHelpers.h"
 
 // Sets default values
 ALaser::ALaser()
@@ -35,7 +37,7 @@ ALaser::ALaser()
 void ALaser::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 }
 
 // Called every frame

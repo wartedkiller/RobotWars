@@ -28,11 +28,6 @@ void ABender::Tick(float DeltaTime)
 	SetSystemChargeRate(SYSTEM_SHIELDS, 200);
 	SetSystemChargeRate(SYSTEM_MISSILES, 600);
 
-	UE_LOG(LogTemp, Warning, TEXT("Sensor 0 data = %d"), GetSensorData(0));
-	UE_LOG(LogTemp, Warning, TEXT("Sensor 1 data = %d"), GetSensorData(1));
-	UE_LOG(LogTemp, Warning, TEXT("Sensor 2 data = %d"), GetSensorData(2));
-	UE_LOG(LogTemp, Warning, TEXT("Sensor 3 data = %d"), GetSensorData(3));
-
 	if (GetSensorData(1) > 0)
 		SetMotorSpeeds(25, 25);
 	else if (GetSensorData(0) > 0) {

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Missile.h"
+#include "ExplosionActor.h"
 #include "RobotWarsEnum.h"
 #include "SensorSystem.h"
 #include "TimerManager.h"
@@ -125,6 +126,9 @@ public:
 
 protected:
 
+	UPROPERTY(BlueprintReadOnly, Category = "Audio")
+		class USoundBase* RobotExplosionAudioCue;
+
 	// Debug tool - Show which way the Robot is facing
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 		class UArrowComponent* RobotDirection;
@@ -184,6 +188,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 		UCapsuleComponent* SensorCollisionCapsule[MAX_SENSORS];
+
+	UPROPERTY(VisibleAnywhere, Category = "Robot", meta = (AllowPrivateAccess = "true"))
+		TSubclassOf<AExplosionActor> ExplosionActor;
 
 	/* TEST VARIALBE*/
 };

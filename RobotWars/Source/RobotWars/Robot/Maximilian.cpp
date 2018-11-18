@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Maximilian.h"
+#include <math.h>
 
 AMaximilian::AMaximilian()
 {
@@ -61,20 +62,20 @@ void AMaximilian::Tick(float DeltaTime)
 		dx = targetX - gpsData.x;
 		dy = targetY - gpsData.y;
 
-		dist = FMath::Sqrt(FMath::Square(dx) + FMath::Square(dy));
+		dist = sqrt(pow(dx, 2) + pow(dy, 2));
 		if (dist < 10) {
 			target ++;
 			target = target % 4;
 		}
-		angle = FMath::Asin(dy / dist);
-		angle = FMath::RadiansToDegrees(angle);
+		angle = asin(dy / dist);
+		angle = angle * (180.0f / M_PI);
 
 		switch (target) {
 		case 0:
 			angle -= 90;
 			break;
 		case 1:
-			angle = FMath::Abs(angle) + 90;
+			angle = abs(angle) + 90;
 			break;
 		case 2:
 			angle -= 90;
@@ -84,7 +85,7 @@ void AMaximilian::Tick(float DeltaTime)
 			break;
 		}
 
-		if (FMath::Abs(gpsData.heading - angle) < 2.5)
+		if (abs(gpsData.heading - angle) < 2.5)
 			SetMotorSpeeds(100, 100);
 		else if (gpsData.heading < angle)
 			SetMotorSpeeds(50, 10);
@@ -103,6 +104,8 @@ void AMaximilian::BeginPlay()
 {
 	//THIS NEED TO BE THE FIRST LINE IN YOUR BEGINPLAY() FUNCTION
 	Super::BeginPlay();
+
+	SetRobotName("Maximilian");
 
 	AddSensor(2, SENSOR_RADAR, -15, 12, 100);
 	AddSensor(1, SENSOR_RADAR, 3, 12, 100);

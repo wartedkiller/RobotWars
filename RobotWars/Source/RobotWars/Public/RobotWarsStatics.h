@@ -7,6 +7,7 @@
 #include "RobotWarsStatics.generated.h"
 
 #define STATUS_MSG_LEN	150
+#define M_PI 3.14159265358979323846
 
 //Robots constants
 #define MAX_TREAD_SPEED			100.0f
@@ -16,7 +17,7 @@
 #define TURBO_ENERGY_COST		100
 #define GPS_ENERGY_COST			2
 #define TURBO_TIME				3.0f
-#define TURBO_SPEED				200
+#define TURBO_SPEED_MULTIPLIER	2.0f
 #define ARENA_FRICTION			40.0f
 #define BASE_RECOIL_VELOCITY	80.0f
 

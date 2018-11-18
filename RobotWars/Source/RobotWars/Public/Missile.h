@@ -34,13 +34,15 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Missile", meta = (AllowPrivateAccess = "true"))
 		class UPaperSpriteComponent* MissileSprite;
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Missile Sound")
+		void PlayExplosionSound();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 private:
 	void Explode(FVector ExplosionLocation);
-
 
 /********VARIABLES********/
 

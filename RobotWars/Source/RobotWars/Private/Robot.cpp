@@ -17,6 +17,9 @@
 #include "SensorSystem.h"
 #include "DrawDebugHelpers.h"
 #include "Arena.h"
+#include "Kismet/GameplayStatics.h"
+#include "PaperFlipbookComponent.h"
+#include "PaperFlipbook.h"
 
 
 /***********************************************************************************************
@@ -91,6 +94,7 @@ ARobot::ARobot()
 	RobotCollisionCapsule->SetupAttachment(RobotDirection);
 	RobotCollisionCapsule->InitCapsuleSize(25.0f, 200.0f);
 
+
 	//Loading the materials to be used in the BeginPlay() method.
 	static ConstructorHelpers::FObjectFinder<UMaterial> ShieldMaterialGetter(TEXT("Material'/Game/Material/ShieldMaterial.ShieldMaterial'"));
 	static ConstructorHelpers::FObjectFinder<UMaterial> RangeSensorMaterialGetter(TEXT("Material'/Game/Material/RangeSensorMaterial_MAT.RangeSensorMaterial_MAT'"));
@@ -117,6 +121,17 @@ ARobot::ARobot()
 
 	RobotCollisionProfile = TEXT("Robot");
 
+	static ConstructorHelpers::FObjectFinder<USoundBase> RobotExplosionCue(TEXT("SoundWave'/Game/Sound/Robot_Explosion.Robot_Explosion'"));
+	if (RobotExplosionCue.Succeeded())
+	{
+		RobotExplosionAudioCue = RobotExplosionCue.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UClass> ExplosionBP(TEXT("Blueprint'/Game/Blueprint/Explosion/RobotExplosion_BP.RobotExplosion_BP_C'"));
+	if (ExplosionBP.Succeeded())
+	{
+		ExplosionActor = ExplosionBP.Object;
+	}
 }
 
 /***********************************************************************************************
@@ -176,7 +191,10 @@ void ARobot::BeginPlay()
 	MaxShieldCharge = MAX_SHIELD_ENERGY;
 	MaxLaserCharge = MAX_LASER_ENERGY;
 	MaxMissileCharge = MAX_MISSILE_ENERGY;
+
+	RobotCollisionCapsule->SetCollisionProfileName("Robot");
 }
+
 
 /***********************************************************************************************
 
@@ -644,7 +662,6 @@ GPS_INFO ARobot::GetGPSInfo()
 
 	if (EnergySystem->GetSystemEnergy(SYSTEM_SHIELDS) >= GPS_ENERGY_COST)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GPS call get Energy = %f"), EnergySystem->GetSystemEnergy(SYSTEM_SHIELDS));
 		//Checking if there is enough energy in the shield before removing it because it will remove the cost in the Generator if there is not enough shield energy.
 		//EnergySystem->DamageShield(GPS_ENERGY_COST);
 
@@ -714,8 +731,8 @@ void ARobot::MoveRobot(float DeltaTime)
 	//The direction (positive or negative) has been accounted for in the math.
 	if (TurboOn)
 	{
-		DistanceLeftTread = ((FMath::Abs(LeftTreadSpeed) + TURBO_SPEED) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
-		DistanceRightTread = ((FMath::Abs(RightTreadSpeed) + TURBO_SPEED) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
+		DistanceLeftTread = ((FMath::Abs(LeftTreadSpeed) * TURBO_SPEED_MULTIPLIER) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
+		DistanceRightTread = ((FMath::Abs(RightTreadSpeed) * TURBO_SPEED_MULTIPLIER) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
 	}
 	else
 	{
@@ -1090,6 +1107,15 @@ void ARobot::KillThisRobot()
 {
 	//TODO Remove the Robot, play explosion.
 	bIsAlive = false;
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		FActorSpawnParameters SpawnParams;
+
+		World->SpawnActor<AExplosionActor>(ExplosionActor, GetActorLocation(), RobotDirection->GetComponentRotation(), SpawnParams);
+		UE_LOG(LogTemp, Warning, TEXT("Explosion Spawned"));
+	}
+	UGameplayStatics::PlaySound2D(GetWorld(), RobotExplosionAudioCue);
 	this->Destroy();
 }
 
@@ -1337,8 +1363,6 @@ void ARobot::GetHit(DAMAGETYPE DamageType, float DamageValue)
 	{
 		KillThisRobot();
 	}
-
-	UE_LOG(LogTemp, Warning, TEXT("%s got hit for %f damage"), *GetName(), DamageValue)
 }
 
 /***********************************************************************************************
