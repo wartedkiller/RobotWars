@@ -103,8 +103,6 @@ void ALaser::SetDamage(float Damage)
 
 void ALaser::Explode()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Laser hit for %f damage"), LaserDamage)
-
 		Destroy();
 }
 

@@ -129,6 +129,9 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Audio")
 		class USoundBase* RobotExplosionAudioCue;
 
+	UPROPERTY(BlueprintReadOnly, Category = "Audio")
+		class USoundBase* RobotBumpAudioCue;
+
 	// Debug tool - Show which way the Robot is facing
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 		class UArrowComponent* RobotDirection;

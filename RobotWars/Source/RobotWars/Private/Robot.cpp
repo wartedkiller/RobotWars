@@ -127,6 +127,12 @@ ARobot::ARobot()
 		RobotExplosionAudioCue = RobotExplosionCue.Object;
 	}
 
+	static ConstructorHelpers::FObjectFinder<USoundBase> RobotBumpCue(TEXT("SoundWave'/Game/Sound/RobotCollision.RobotCollision'"));
+	if (RobotBumpCue.Succeeded())
+	{
+		RobotBumpAudioCue = RobotBumpCue.Object;
+	}
+
 	static ConstructorHelpers::FObjectFinder<UClass> ExplosionBP(TEXT("Blueprint'/Game/Blueprint/Explosion/RobotExplosion_BP.RobotExplosion_BP_C'"));
 	if (ExplosionBP.Succeeded())
 	{
@@ -828,12 +834,11 @@ void ARobot::MoveRobot(float DeltaTime)
 		//Pivot point is outside of the robot which mean wide turn
 		else if (RightTreadSpeed > 0)
 		{
-			float RadiusRight = 1 / ((1 / TREAD_DISTANCE) * ((DistanceRightTread * FMath::Sign(RightTreadSpeed) / DistanceLeftTread * FMath::Sign(LeftTreadSpeed)) - 1));
-
-			FuturHeading -= FMath::Atan(DistanceRightTread * FMath::Sign(RightTreadSpeed) / RadiusRight);
-
+			float RadiusRight = TREAD_DISTANCE / ((DistanceLeftTread * FMath::Sign(LeftTreadSpeed) / DistanceRightTread * FMath::Sign(RightTreadSpeed)) - 1);
 			float RadiusCenter = RadiusRight + (TREAD_DISTANCE / 2);
-			float MovementFromCenter = (DistanceRightTread * FMath::Sign(RightTreadSpeed) / RadiusRight) * RadiusCenter;
+			float MovementFromCenter = (DistanceRightTread * FMath::Sign(RightTreadSpeed) * RadiusCenter) / RadiusRight;
+
+			FuturHeading += FMath::Atan(MovementFromCenter / RadiusCenter);
 			FuturPosition += FVector(MovementFromCenter * FMath::Cos(FuturHeading), MovementFromCenter * FMath::Sin(FuturHeading), 0.0f);
 		}
 		//Pivot point is between the center of the robot and the right thread
@@ -865,19 +870,19 @@ void ARobot::MoveRobot(float DeltaTime)
 				{
 					if (CurrentHit.GetComponent()->GetName().Compare("NorthWall") == 0)
 					{
-						FuturPosition.X = GetActorLocation().X;
+						FuturPosition.X = GetActorLocation().X - 0.5f;
 					}
 					else if (CurrentHit.GetComponent()->GetName().Compare("WestWall") == 0)
 					{
-						FuturPosition.Y = GetActorLocation().Y;
+						FuturPosition.Y = GetActorLocation().Y + 0.5f;
 					}
 					else if (CurrentHit.GetComponent()->GetName().Compare("SouthWall") == 0)
 					{
-						FuturPosition.X = GetActorLocation().X;
+						FuturPosition.X = GetActorLocation().X + 0.5f;
 					}
 					else if (CurrentHit.GetComponent()->GetName().Compare("EastWall") == 0)
 					{
-						FuturPosition.Y = GetActorLocation().Y;
+						FuturPosition.Y = GetActorLocation().Y - 0.5f;
 					}
 					AddBumpInfo(DAMAGE_WALL);
 				}
@@ -924,6 +929,7 @@ void ARobot::MoveRobot(float DeltaTime)
 							RecoilVelocity = BASE_RECOIL_VELOCITY;
 
 							//Deal damage to THIS Robot.
+							UGameplayStatics::PlaySound2D(World, RobotBumpAudioCue);
 							GetHit(DAMAGE_ROBOT, (this->RobotSpeed / 2) + CurrentHitActor->GetRobotSpeed());
 							//Calculate the damage dealt to the OTHER Robot and add points to THIS Robot Score.
 							Score += this->RobotSpeed + (CurrentHitActor->GetRobotSpeed() / 2);
@@ -1131,7 +1137,7 @@ void ARobot::KillThisRobot()
 
 		World->SpawnActor<AExplosionActor>(ExplosionActor, GetActorLocation(), RobotDirection->GetComponentRotation(), SpawnParams);
 	}
-	UGameplayStatics::PlaySound2D(GetWorld(), RobotExplosionAudioCue);
+	UGameplayStatics::PlaySound2D(World, RobotExplosionAudioCue);
 	this->Destroy();
 }
 

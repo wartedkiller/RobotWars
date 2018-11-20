@@ -114,8 +114,7 @@ void AMissile::Explode(FVector ExplosionLocation)
 {
 
 	this->PlayExplosionSound();
-	//Check for Splash damage.
-	//Check for collision
+
 	if (UWorld* World = GetWorld())
 	{
 		TArray<FHitResult> OutHit;
