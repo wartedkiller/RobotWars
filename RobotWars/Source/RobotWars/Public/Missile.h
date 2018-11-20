@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "PaperCharacter.h"
+#include "ExplosionActor.h"
 #include "GameFramework/Actor.h"
 #include "Missile.generated.h"
 
@@ -54,7 +55,9 @@ public:
 		float Radius;
 
 private:
-
 	class AActor* ActorHitByMissile = nullptr;
+
+	UPROPERTY(VisibleAnywhere, Category = "Missile", meta = (AllowPrivateAccess = "true"))
+		TSubclassOf<AExplosionActor> ExplosionActor;
 	
 };

@@ -17,7 +17,8 @@
 #define TURBO_ENERGY_COST		100
 #define GPS_ENERGY_COST			2
 #define TURBO_TIME				3.0f
-#define TURBO_SPEED_MULTIPLIER	2.0f
+#define TURBO_MAX_SPEED			125.0f
+#define TURBO_SPEED				75.0f
 #define ARENA_FRICTION			40.0f
 #define BASE_RECOIL_VELOCITY	80.0f
 

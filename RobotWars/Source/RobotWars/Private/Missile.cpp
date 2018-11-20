@@ -8,6 +8,7 @@
 #include "Robot.h"
 #include "Arena.h"
 #include "Components/CapsuleComponent.h"
+#include "UObject/ConstructorHelpers.h"
 
 
 /****************************************************
@@ -35,6 +36,12 @@ AMissile::AMissile()
 	MissileSprite->SetupAttachment(MissileDirection);
 
 	MovementCollisionProfile = TEXT("Projectile:Fly");
+
+	static ConstructorHelpers::FObjectFinder<UClass> ExplosionBP(TEXT("Blueprint'/Game/Blueprint/Explosion/MissileExplosion_BP.MissileExplosion_BP_C'"));
+	if (ExplosionBP.Succeeded())
+	{
+		ExplosionActor = ExplosionBP.Object;
+	}
 
 }
 
@@ -69,7 +76,6 @@ void AMissile::Tick(float DeltaTime)
 		{
 			for (FHitResult CurrentCollision : OutHit)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s"), *CurrentCollision.GetActor()->GetName())
 				if (Cast<AArena>(CurrentCollision.GetActor()))
 				{
 					ActorHitByMissile = CurrentCollision.GetActor();
@@ -106,7 +112,6 @@ void AMissile::Tick(float DeltaTime)
 //TODO Add damage based on distance of the explosion.
 void AMissile::Explode(FVector ExplosionLocation)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Insert Missile Explosion Here"));
 
 	this->PlayExplosionSound();
 	//Check for Splash damage.
@@ -143,6 +148,11 @@ void AMissile::Explode(FVector ExplosionLocation)
 				}
 			}
 		}
+
+		//Spawning Missile Explosion
+		FActorSpawnParameters SpawnParams;
+		World->SpawnActor<AExplosionActor>(ExplosionActor, GetActorLocation(), MissileDirection->GetComponentRotation(), SpawnParams);
+
 	}
 	Destroy();
 }

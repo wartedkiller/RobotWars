@@ -731,14 +731,31 @@ void ARobot::MoveRobot(float DeltaTime)
 	//The direction (positive or negative) has been accounted for in the math.
 	if (TurboOn)
 	{
-		DistanceLeftTread = ((FMath::Abs(LeftTreadSpeed) * TURBO_SPEED_MULTIPLIER) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
-		DistanceRightTread = ((FMath::Abs(RightTreadSpeed) * TURBO_SPEED_MULTIPLIER) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
+		if (LeftTreadSpeed + TURBO_SPEED > TURBO_MAX_SPEED)
+		{
+			LeftTreadSpeed = TURBO_MAX_SPEED;
+		}
+		else
+		{
+			LeftTreadSpeed += TURBO_SPEED;
+		}
+
+		if (RightTreadSpeed + TURBO_SPEED > TURBO_MAX_SPEED)
+		{
+			RightTreadSpeed = TURBO_MAX_SPEED;
+		}
+		else
+		{
+			RightTreadSpeed +=TURBO_SPEED;
+		}
+		/*DistanceLeftTread = ((FMath::Abs(LeftTreadSpeed) * TURBO_SPEED_MULTIPLIER) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
+		DistanceRightTread = ((FMath::Abs(RightTreadSpeed) * TURBO_SPEED_MULTIPLIER) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;*/
 	}
-	else
-	{
+	//else
+	//{
 		DistanceLeftTread = (FMath::Abs(LeftTreadSpeed) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
 		DistanceRightTread = (FMath::Abs(RightTreadSpeed) / MAX_TREAD_SPEED) * MAX_SPEED * DeltaTime;
-	}
+	//}
 
 
 	//Case 1 : The Robot is moving without turning.
@@ -1113,7 +1130,6 @@ void ARobot::KillThisRobot()
 		FActorSpawnParameters SpawnParams;
 
 		World->SpawnActor<AExplosionActor>(ExplosionActor, GetActorLocation(), RobotDirection->GetComponentRotation(), SpawnParams);
-		UE_LOG(LogTemp, Warning, TEXT("Explosion Spawned"));
 	}
 	UGameplayStatics::PlaySound2D(GetWorld(), RobotExplosionAudioCue);
 	this->Destroy();
